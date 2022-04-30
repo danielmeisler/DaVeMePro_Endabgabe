@@ -36,6 +36,14 @@ def getArtistsAlbums(artist_id):
                     headers=headers)
     a = r.json()
 
+    # Get image part
+    cover_image = requests.get(a["images"][0]['url'])
+    with open("coverImage.png", 'wb') as f:
+        f.write(cover_image.content) 
+       
+       
+    # Get image part end
+
     print("--- All Albums by the Artist '" + a["name"] + "' ---")
 
     r = requests.get(BASE_URL + "artists/" + artist_id + "/albums",
