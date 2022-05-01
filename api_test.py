@@ -1,5 +1,7 @@
 import requests
 import os
+import matplotlib.pyplot as plt
+import cv2
 
 CLIENT_ID = "56651af3c4134034b9977c0a650b2cdf"
 CLIENT_SECRET = "ba05f9e81dbc4443857aa9f3afcfc88b"
@@ -40,7 +42,15 @@ def getArtistsAlbums(artist_id):
     cover_image = requests.get(a["images"][0]['url'])
     with open("coverImage.png", 'wb') as f:
         f.write(cover_image.content) 
-       
+    
+    #Get Pixalized
+    img = cv2.imread('coverImage.png')
+    resized = cv2.resize(img, (25,25), interpolation=cv2.INTER_LINEAR)
+    resized = cv2.resize(img, (50,50), interpolation=cv2.INTER_NEAREST)
+    cv2.namedWindow('img', cv2.WINDOW_NORMAL)
+    cv2.resizeWindow('img', 500, 500)
+    cv2.imshow('img', resized)
+    cv2.waitKey(0)
        
     # Get image part end
 
