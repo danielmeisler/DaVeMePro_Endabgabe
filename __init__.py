@@ -4,7 +4,7 @@ import cv2
 import bpy
 import requests
 import os
-#import sys
+#import sysimage.png
 #sys.path.append('c:\\Users\\sanok\\Documents\\Semester5\\Repo\\DaVeMePro_Endabgabe')
 
 bl_info = {
