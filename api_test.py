@@ -114,4 +114,4 @@ if (__name__ == "__main__"):
     # requestAuthorization()
     # getSong("3I2Jrz7wTJTVZ9fZ6V3rQx")
     # getArtistsAlbums("26T3LtbuGT1Fu9m0eRq5X3")
-    # getSongImage("3I2Jrz7wTJTVZ9fZ6V3rQx")
+    getSongImage("3I2Jrz7wTJTVZ9fZ6V3rQx")
