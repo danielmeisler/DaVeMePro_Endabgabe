@@ -4,7 +4,7 @@ import bpy
 
 bl_info = {
     "name": "Basic Addon",
-    "author": "Samuel Kasper, Alex Reiprich, David Niemann, Danuel Meisler",
+    "author": "Samuel Kasper, Alex Reiprich, David Niemann, Daniel Meisler",
     "version": (1, 0),
     "blender": (2, 91, 0),
     "category": "Add Mesh",
