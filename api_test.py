@@ -18,7 +18,7 @@ CLIENT_AUTH_URL = "https://accounts.spotify.com/authorize"
 BASE_URL = "https://api.spotify.com/v1/"
 
 
-PLANE_AMOUNT = 10
+PLANE_AMOUNT = 100
 # get access token
 auth_response = requests.post(AUTH_URL, {
     'grant_type': 'client_credentials',
@@ -76,13 +76,13 @@ def getSongImage(track_id):
 
     createCoverFromImage(img)
 
-# Get Pixalized
-# img = cv2.imread('coverImage.png')
-# resized = cv2.resize(img, (50, 50), interpolation=cv2.INTER_NEAREST)
-# cv2.namedWindow('img', cv2.WINDOW_NORMAL)
-# cv2.resizeWindow('img', 500, 500)
-# cv2.imshow('img', resized)
-# cv2.waitKey(0)
+    #Get Pixalized
+    #img = cv2.imread('coverImage.png')
+    resized = cv2.resize(img, (50, 50), interpolation=cv2.INTER_NEAREST)
+    cv2.namedWindow('img', cv2.WINDOW_NORMAL)
+    cv2.resizeWindow('img', 500, 500)
+    cv2.imshow('img', resized)
+    cv2.waitKey(0)
 
 # Get image part end
 
@@ -123,34 +123,46 @@ def createCoverFromImage(img):
     # löscht selektierte objekte
     bpy.ops.object.delete(use_global=False, confirm=False)
     bpy.ops.outliner.orphans_purge()  # löscht überbleibende Meshdaten etc.
-    
-
+    for material in bpy.data.materials:
+        bpy.data.materials.remove(material, do_unlink=True) # löschet alle Materialien
     verts = []
     faces = []
-    facecount = 0
     facecolor = []
 
-    cover_mesh = bpy.data.meshes.new("grassblade mesh")
-    cover_object = bpy.data.objects.new("grassblade", cover_mesh)
+    cover_mesh = bpy.data.meshes.new("cover mesh")
+    cover_object = bpy.data.objects.new("cover", cover_mesh)
     bpy.context.collection.objects.link(cover_object)
     bm = bmesh.new()
     bm.from_mesh(cover_mesh)
-
+    #  erstellt die Verts 
     for x in range(PLANE_AMOUNT + 1):
         verts.append([])
         for y in range(PLANE_AMOUNT + 1):
             new_vert = bm.verts.new(
-                (0, int(x - PLANE_AMOUNT/2), int(y-PLANE_AMOUNT/2)))
+                (0, int(y - PLANE_AMOUNT/2), -int(x-PLANE_AMOUNT/2)))
             verts[x].append(new_vert)
-
-    bm.verts.ensure_lookup_table() 
+    # erstellt die faces
+    bm.verts.ensure_lookup_table()
     for x in range(len(verts)-1):
         for y in range(len(verts[x])-1):
             new_face = bm.faces.new(
                 (verts[x][y], verts[x][y+1], verts[x+1][y+1], verts[x+1][y]))
             faces.append(new_face)
-            
-    
+    # erstellst die Matherialien
+    rows, cols, _ = img.shape
+    for i in range(PLANE_AMOUNT):
+        for j in range(PLANE_AMOUNT):
+            newMat = bpy.data.materials.new(
+                'mat_' + str(i) + "_" + str(j))
+            color = img[int(i*rows/PLANE_AMOUNT), int(j*cols/PLANE_AMOUNT)]
+            newMat.diffuse_color = ((color[2]/255, color[1]/255, color[0]/255, 1))
+            facecolor.append(newMat)
+            cover_object.data.materials.append(newMat)
+            d= 0
+    # weist die materialien den faces
+    for face in faces:
+        face.material_index = d
+        d+=1
 
     bm.to_mesh(cover_mesh)
     bm.free()
