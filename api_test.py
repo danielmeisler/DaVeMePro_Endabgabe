@@ -114,36 +114,21 @@ def getArtistsAlbums(artist_id):
 def createCoverFromImage(img):
     global PLANE_AMOUNT
     # Select all objects
-    bpy.ops.object.select_all(action='SELECT')  
+    bpy.ops.object.select_all(action='SELECT')
     # Delete the selected Objects
     bpy.ops.object.delete(use_global=False, confirm=False)
     # Delete mesh-data
-    bpy.ops.outliner.orphans_purge()  
+    bpy.ops.outliner.orphans_purge()
     # Delete materials
     for material in bpy.data.materials:
-        bpy.data.materials.remove(material, do_unlink=True) 
+        bpy.data.materials.remove(material, do_unlink=True)
     verts = []
-    faces = []
 
     cover_mesh = bpy.data.meshes.new("cover mesh")
     cover_object = bpy.data.objects.new("cover", cover_mesh)
     bpy.context.collection.objects.link(cover_object)
     bm = bmesh.new()
     bm.from_mesh(cover_mesh)
-    #  Creating the verts 
-    for x in range(PLANE_AMOUNT + 1):
-        verts.append([])
-        for y in range(PLANE_AMOUNT + 1):
-            new_vert = bm.verts.new(
-                (0, int(y - PLANE_AMOUNT/2), -int(x-PLANE_AMOUNT/2)))
-            verts[x].append(new_vert)
-    # Connect 4 verts to a face and append to faces array 
-    bm.verts.ensure_lookup_table()
-    for x in range(len(verts)-1):
-        for y in range(len(verts[x])-1):
-            new_face = bm.faces.new(
-                (verts[x][y], verts[x][y+1], verts[x+1][y+1], verts[x+1][y]))
-            faces.append(new_face)
     # Create Material
     rows, cols, _ = img.shape
     for i in range(PLANE_AMOUNT):
@@ -151,18 +136,33 @@ def createCoverFromImage(img):
             new_mat = bpy.data.materials.new(
                 'mat_' + str(i) + "_" + str(j))
             color = img[int(i*rows/PLANE_AMOUNT), int(j*cols/PLANE_AMOUNT)]
-            new_mat.diffuse_color = ((color[2]/255, color[1]/255, color[0]/255, 1))
+            new_mat.diffuse_color = (
+                (color[2]/255, color[1]/255, color[0]/255, 1))
             cover_object.data.materials.append(new_mat)
-    material_counter= 0
-    # Assign the material number to the faces
-    for face in faces:
-        face.material_index = material_counter
-        material_counter+=1
+    #  Creating the verts
+    for x in range(PLANE_AMOUNT + 1):
+        verts.append([])
+        for y in range(PLANE_AMOUNT + 1):
+            new_vert = bm.verts.new(
+                (0, int(y - PLANE_AMOUNT/2), -int(x-PLANE_AMOUNT/2)))
+            verts[x].append(new_vert)
+    # Connect 4 verts to a face and append to faces array
+    bm.verts.ensure_lookup_table()
+    material_counter = 0
+    for x in range(len(verts)-1):
+        for y in range(len(verts[x])-1):
+            new_face = bm.faces.new(
+                (verts[x][y], verts[x][y+1], verts[x+1][y+1], verts[x+1][y]))
+            new_face.material_index = material_counter
+            material_counter += 1
 
     bm.to_mesh(cover_mesh)
     bm.free()
 
+
 # Clears console
+
+
 def clear():
     os.system('cls')
 
