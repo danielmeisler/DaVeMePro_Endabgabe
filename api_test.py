@@ -19,10 +19,10 @@ CLIENT_AUTH_URL = "https://accounts.spotify.com/authorize"
 BASE_URL = "https://api.spotify.com/v1/"
 
 
-PLANE_AMOUNT = 100
-COLOR_DIFFERECE = 0.1
-materials = []
-material_index = []
+PLANE_AMOUNT = 100  # Length of the square covers
+COLOR_DIFFERECE = 0.1 # distance of the color components until a new material is created
+materials = [] # saves all materials
+material_index = [] # Indices which materials should be assigned to the faces
 
 # get access token
 auth_response = requests.post(AUTH_URL, {
@@ -145,8 +145,8 @@ def createCoverFromImage(img):
             color = img[int(i*rows/PLANE_AMOUNT), int(j*cols/PLANE_AMOUNT)]
             new_mat.diffuse_color = (
                 (color[2]/255, color[1]/255, color[0]/255, 1)) """
-            createMaterial(
-                img[int(i*rows/PLANE_AMOUNT), int(j*cols/PLANE_AMOUNT)])
+            createMaterial(img[int(i*rows/PLANE_AMOUNT), int(j*cols/PLANE_AMOUNT)])
+    # adds all materials to the object      
     for i in range(len(materials)):
          cover_object.data.materials.append(materials[i])            
     #  Creating the verts
@@ -169,7 +169,7 @@ def createCoverFromImage(img):
     bm.to_mesh(cover_mesh)
     bm.free()
 
-
+# creates a new material or matches material index with the appropriate material for the faces
 def createMaterial(color):
     global materials
     global material_index
@@ -188,6 +188,9 @@ def createMaterial(color):
     else: 
         material_index.append(index)
 
+# Checks whether a suitable material already exists after the Color Difference
+# returns -1 if no matching material already exists
+# returns the index of where the matching material is in the Materials Array
 def material_is_already_available(color):
     global materials
     global COLOR_DIFFERECE
