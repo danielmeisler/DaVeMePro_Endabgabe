@@ -1,4 +1,5 @@
 
+from ast import If
 import bmesh
 import requests
 import os
@@ -19,6 +20,10 @@ BASE_URL = "https://api.spotify.com/v1/"
 
 
 PLANE_AMOUNT = 100
+COLOR_DIFFERECE = 0.1
+materials = []
+material_index = []
+
 # get access token
 auth_response = requests.post(AUTH_URL, {
     'grant_type': 'client_credentials',
@@ -113,6 +118,8 @@ def getArtistsAlbums(artist_id):
 
 def createCoverFromImage(img):
     global PLANE_AMOUNT
+    global materials
+    global material_index
     # Select all objects
     bpy.ops.object.select_all(action='SELECT')
     # Delete the selected Objects
@@ -133,12 +140,15 @@ def createCoverFromImage(img):
     rows, cols, _ = img.shape
     for i in range(PLANE_AMOUNT):
         for j in range(PLANE_AMOUNT):
-            new_mat = bpy.data.materials.new(
+            """ new_mat = bpy.data.materials.new(
                 'mat_' + str(i) + "_" + str(j))
             color = img[int(i*rows/PLANE_AMOUNT), int(j*cols/PLANE_AMOUNT)]
             new_mat.diffuse_color = (
-                (color[2]/255, color[1]/255, color[0]/255, 1))
-            cover_object.data.materials.append(new_mat)
+                (color[2]/255, color[1]/255, color[0]/255, 1)) """
+            createMaterial(
+                img[int(i*rows/PLANE_AMOUNT), int(j*cols/PLANE_AMOUNT)])
+    for i in range(len(materials)):
+         cover_object.data.materials.append(materials[i])            
     #  Creating the verts
     for x in range(PLANE_AMOUNT + 1):
         verts.append([])
@@ -148,19 +158,45 @@ def createCoverFromImage(img):
             verts[x].append(new_vert)
     # Connect 4 verts to a face and append to faces array
     bm.verts.ensure_lookup_table()
-    material_counter = 0
+    face_counter = 0
     for x in range(len(verts)-1):
         for y in range(len(verts[x])-1):
             new_face = bm.faces.new(
                 (verts[x][y], verts[x][y+1], verts[x+1][y+1], verts[x+1][y]))
-            new_face.material_index = material_counter
-            material_counter += 1
+            new_face.material_index = material_index[face_counter]
+            face_counter += 1
 
     bm.to_mesh(cover_mesh)
     bm.free()
 
 
-# Clears console
+def createMaterial(color):
+    global materials
+    global material_index
+
+    new_color = (round(color[2]/255, 1),
+                 round(color[1]/255, 1), 
+                 round(color[0]/255, 1), 
+                 1) 
+    index = material_is_already_available(new_color)
+    if(index == -1):
+        new_mat = bpy.data.materials.new(
+            'mat_' + str(len(materials)))
+        new_mat.diffuse_color = new_color
+        material_index.append(len(materials))
+        materials.append(new_mat)
+    else: 
+        material_index.append(index)
+
+def material_is_already_available(color):
+    global materials
+    global COLOR_DIFFERECE
+    for i in range(len(materials)):
+        if (materials[i].diffuse_color[0] + COLOR_DIFFERECE > color[0] and materials[i].diffuse_color[0] - COLOR_DIFFERECE < color[0]):
+            if (materials[i].diffuse_color[1] + COLOR_DIFFERECE > color[1] and materials[i].diffuse_color[1] - COLOR_DIFFERECE < color[1]):
+                if(materials[i].diffuse_color[2] + COLOR_DIFFERECE > color[2] and materials[i].diffuse_color[2] - COLOR_DIFFERECE < color[2]):
+                    return i
+    return -1
 
 
 def clear():
