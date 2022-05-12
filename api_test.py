@@ -17,7 +17,7 @@ CLIENT_AUTH_URL = "https://accounts.spotify.com/authorize"
 BASE_URL = "https://api.spotify.com/v1/"
 
 COVER_SIZE = 10 # size of the total
-COLOR_DIFFERECE = 0.1 # distance of the color components until a new material is created
+COLOR_DIFFERECE = 0.2 # distance of the color components until a new material is created
 
 plane_amount = 200  # Length of the square covers
 materials = [] # saves all materials
@@ -126,7 +126,6 @@ def createCoverFromImage(img):
             plane_amount = cols
         else:    
             plane_amount = rows
-    print(plane_amount)
     # Select all objects
     bpy.ops.object.select_all(action='SELECT')
     # Delete the selected Objects
@@ -213,4 +212,4 @@ if (__name__ == "__main__"):
     # requestAuthorization()
     # getSong("3I2Jrz7wTJTVZ9fZ6V3rQx")
     # getArtistsAlbums("26T3LtbuGT1Fu9m0eRq5X3")
-    getSongImage("5jkYKCuSwgmCZVeXbC8OYY")
+    getSongImage("2TmqHjg7uhizGndzXQdFuf")
