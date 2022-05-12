@@ -16,7 +16,7 @@ AUTH_URL = "https://accounts.spotify.com/api/token"
 CLIENT_AUTH_URL = "https://accounts.spotify.com/authorize"
 BASE_URL = "https://api.spotify.com/v1/"
 
-
+COVER_SIZE = 10 # size of the total
 PLANE_AMOUNT = 100  # Length of the square covers
 COLOR_DIFFERECE = 0.1 # distance of the color components until a new material is created
 materials = [] # saves all materials
@@ -116,6 +116,7 @@ def getArtistsAlbums(artist_id):
 
 def createCoverFromImage(img):
     global PLANE_AMOUNT
+    global COVER_SIZE
     global materials
     global material_index
     # Select all objects
@@ -138,11 +139,6 @@ def createCoverFromImage(img):
     rows, cols, _ = img.shape
     for i in range(PLANE_AMOUNT):
         for j in range(PLANE_AMOUNT):
-            """ new_mat = bpy.data.materials.new(
-                'mat_' + str(i) + "_" + str(j))
-            color = img[int(i*rows/PLANE_AMOUNT), int(j*cols/PLANE_AMOUNT)]
-            new_mat.diffuse_color = (
-                (color[2]/255, color[1]/255, color[0]/255, 1)) """
             createMaterial(img[int(i*rows/PLANE_AMOUNT), int(j*cols/PLANE_AMOUNT)])
     # adds all materials to the object      
     for i in range(len(materials)):
@@ -152,7 +148,7 @@ def createCoverFromImage(img):
         verts.append([])
         for y in range(PLANE_AMOUNT + 1):
             new_vert = bm.verts.new(
-                (0, int(y - PLANE_AMOUNT/2), -int(x-PLANE_AMOUNT/2)))
+                (0, (y - PLANE_AMOUNT/2)/(PLANE_AMOUNT/ COVER_SIZE), -(x-PLANE_AMOUNT/2)/(PLANE_AMOUNT/ COVER_SIZE)))
             verts[x].append(new_vert)
     # Connect 4 verts to a face and append to faces array
     bm.verts.ensure_lookup_table()
@@ -209,4 +205,4 @@ if (__name__ == "__main__"):
     # requestAuthorization()
     # getSong("3I2Jrz7wTJTVZ9fZ6V3rQx")
     # getArtistsAlbums("26T3LtbuGT1Fu9m0eRq5X3")
-    getSongImage("3I2Jrz7wTJTVZ9fZ6V3rQx")
+    getSongImage("0qHKkhAfbJLXMh93XHlE69")
