@@ -120,6 +120,7 @@ def createCoverFromImage(img):
     global plane_amount
     global materials
     global material_index
+    # If plane amount is bigger than image size, set plane amount to image size
     rows, cols, _ = img.shape
     if(rows < plane_amount): 
         if(cols < plane_amount):
@@ -142,8 +143,8 @@ def createCoverFromImage(img):
     bpy.context.collection.objects.link(cover_object)
     bm = bmesh.new()
     bm.from_mesh(cover_mesh)
+
     # Create Material
-   
     for i in range(plane_amount):
         for j in range(plane_amount):
             createMaterial(img[int(i*rows/plane_amount), int(j*cols/plane_amount)])
@@ -179,7 +180,9 @@ def createMaterial(color):
                  round(color[1]/255, 1), 
                  round(color[0]/255, 1), 
                  1) 
+    # check if a similar color already exists and if so, return its index
     index = material_is_already_available(new_color)
+    # if color exists already append it. Otherwise create a new material.
     if(index == -1):
         new_mat = bpy.data.materials.new(
             'mat_' + str(len(materials)))
@@ -189,9 +192,7 @@ def createMaterial(color):
     else: 
         material_index.append(index)
 
-# Checks whether a suitable material already exists after the Color Difference
-# returns -1 if no matching material already exists
-# returns the index of where the matching material is in the Materials Array
+# check if there is already a material for a specific color. If so return its index. Otherwise return -1.
 def material_is_already_available(color):
     global materials
     global COLOR_DIFFERECE
