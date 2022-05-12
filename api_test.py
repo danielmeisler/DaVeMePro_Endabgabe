@@ -1,5 +1,3 @@
-
-from ast import If
 import bmesh
 import requests
 import os
