@@ -17,8 +17,9 @@ CLIENT_AUTH_URL = "https://accounts.spotify.com/authorize"
 BASE_URL = "https://api.spotify.com/v1/"
 
 COVER_SIZE = 10 # size of the total
-PLANE_AMOUNT = 100  # Length of the square covers
 COLOR_DIFFERECE = 0.1 # distance of the color components until a new material is created
+
+plane_amount = 200  # Length of the square covers
 materials = [] # saves all materials
 material_index = [] # Indices which materials should be assigned to the faces
 
@@ -75,11 +76,11 @@ def getSongImage(track_id):
     createCoverFromImage(img)
 
     # Show pixeled cover image
-    resized = cv2.resize(img, (100, 100), interpolation=cv2.INTER_NEAREST)
+    """ resized = cv2.resize(img, (100, 100), interpolation=cv2.INTER_NEAREST)
     cv2.namedWindow('img', cv2.WINDOW_NORMAL)
     cv2.resizeWindow('img', 500, 500)
     cv2.imshow('img', resized)
-    cv2.waitKey(0)
+    cv2.waitKey(0) """
 
 # Get image part end
 
@@ -115,10 +116,17 @@ def getArtistsAlbums(artist_id):
 
 
 def createCoverFromImage(img):
-    global PLANE_AMOUNT
     global COVER_SIZE
+    global plane_amount
     global materials
     global material_index
+    rows, cols, _ = img.shape
+    if(rows < plane_amount): 
+        if(cols < plane_amount):
+            plane_amount = cols
+        else:    
+            plane_amount = rows
+    print(plane_amount)
     # Select all objects
     bpy.ops.object.select_all(action='SELECT')
     # Delete the selected Objects
@@ -136,19 +144,19 @@ def createCoverFromImage(img):
     bm = bmesh.new()
     bm.from_mesh(cover_mesh)
     # Create Material
-    rows, cols, _ = img.shape
-    for i in range(PLANE_AMOUNT):
-        for j in range(PLANE_AMOUNT):
-            createMaterial(img[int(i*rows/PLANE_AMOUNT), int(j*cols/PLANE_AMOUNT)])
+   
+    for i in range(plane_amount):
+        for j in range(plane_amount):
+            createMaterial(img[int(i*rows/plane_amount), int(j*cols/plane_amount)])
     # adds all materials to the object      
     for i in range(len(materials)):
          cover_object.data.materials.append(materials[i])            
     #  Creating the verts
-    for x in range(PLANE_AMOUNT + 1):
+    for x in range(plane_amount + 1):
         verts.append([])
-        for y in range(PLANE_AMOUNT + 1):
+        for y in range(plane_amount + 1):
             new_vert = bm.verts.new(
-                (0, (y - PLANE_AMOUNT/2)/(PLANE_AMOUNT/ COVER_SIZE), -(x-PLANE_AMOUNT/2)/(PLANE_AMOUNT/ COVER_SIZE)))
+                (0, (y - plane_amount/2)/(plane_amount/ COVER_SIZE), -(x-plane_amount/2)/(plane_amount/ COVER_SIZE)))
             verts[x].append(new_vert)
     # Connect 4 verts to a face and append to faces array
     bm.verts.ensure_lookup_table()
@@ -205,4 +213,4 @@ if (__name__ == "__main__"):
     # requestAuthorization()
     # getSong("3I2Jrz7wTJTVZ9fZ6V3rQx")
     # getArtistsAlbums("26T3LtbuGT1Fu9m0eRq5X3")
-    getSongImage("0qHKkhAfbJLXMh93XHlE69")
+    getSongImage("5jkYKCuSwgmCZVeXbC8OYY")
