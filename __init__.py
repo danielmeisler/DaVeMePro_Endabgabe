@@ -1,11 +1,10 @@
 import webbrowser
+import bmesh
 import numpy as np
 import cv2
 import bpy
 import requests
 import os
-#import sysimage.png
-#sys.path.append('c:\\Users\\sanok\\Documents\\Semester5\\Repo\\DaVeMePro_Endabgabe')
 
 bl_info = {
     "name": "Basic Addon",
@@ -34,6 +33,14 @@ AUTH_URL = "https://accounts.spotify.com/api/token"
 CLIENT_AUTH_URL = "https://accounts.spotify.com/authorize"
 BASE_URL = "https://api.spotify.com/v1/"
 
+COVER_SIZE = 10 # size of the total
+COLOR_DIFFERECE = 0.2 # distance of the color components until a new material is created
+
+plane_amount = 200  # Length of the square covers
+materials = [] # saves all materials
+material_index = [] # Indices which materials should be assigned to the faces
+
+
 # get access token
 auth_response = requests.post(AUTH_URL, {
     'grant_type': 'client_credentials',
@@ -51,8 +58,10 @@ headers = {
 class Method():
     def __init__(self):
         print("Init")
+        Method.clear()
+        Method.getSongImage("2TmqHjg7uhizGndzXQdFuf")
 
-    # Opens login screen -> After redirect, you can see the users code. (Live Server must be active!)
+        # Opens login screen -> After redirect, you can see the users code. (Live Server must be active!)
     def requestAuthorization():
         url = CLIENT_AUTH_URL
         url += "?client_id=" + CLIENT_ID
@@ -63,6 +72,8 @@ class Method():
         webbrowser.open(url, new=0, autoraise=True)
 
     # Gets song from track id
+
+
     def getSong(track_id):
         r = requests.get(BASE_URL + "tracks/" + track_id, headers=headers)
         d = r.json()
@@ -74,49 +85,49 @@ class Method():
         print()
 
     # Gets cover from song
+
+
     def getSongImage(track_id):
-        #getSong(track_id)
+        Method.getSong(track_id)
         r = requests.get(BASE_URL + "tracks/" + track_id, headers=headers)
         d = r.json()
 
         # Get image part
         cover_image = requests.get(d["album"]["images"][0]['url'])
-
-        # with open("coverImage.png", 'wb') as f:
-        #    f.write(cover_image.content)
-
         img_string = np.frombuffer(cover_image.content, np.uint8)
         img = cv2.imdecode(img_string, cv2.IMREAD_COLOR)
+        Method.createCoverFromImage(img)
 
-        # Get Pixalized
-        #img = cv2.imread('coverImage.png')
-        resized = cv2.resize(img, (25, 25), interpolation=cv2.INTER_LINEAR)
-        resized = cv2.resize(img, (50, 50), interpolation=cv2.INTER_NEAREST)
+        # Show pixeled cover image
+        """ resized = cv2.resize(img, (100, 100), interpolation=cv2.INTER_NEAREST)
         cv2.namedWindow('img', cv2.WINDOW_NORMAL)
         cv2.resizeWindow('img', 500, 500)
         cv2.imshow('img', resized)
-        cv2.waitKey(0)
+        cv2.waitKey(0) """
+
+    # Get image part end
 
     # Gets all albums from artist
+
+
     def getArtistsAlbums(artist_id):
 
         r = requests.get(BASE_URL + "artists/" + artist_id,
-                         headers=headers)
+                        headers=headers)
         a = r.json()
 
         print("--- All Albums by the Artist '" + a["name"] + "' ---")
 
         r = requests.get(BASE_URL + "artists/" + artist_id + "/albums",
-                         headers=headers,
-                         params={"include_groups": "album", "limit": 50})
+                        headers=headers,
+                        params={"include_groups": "album", "limit": 50})
         d = r.json()
 
         albums = []
         for album in d["items"]:
             album_name = album["name"]
 
-            trim_name = album_name.split(
-                '(')[0].strip()  # Filter out duplicates
+            trim_name = album_name.split('(')[0].strip()  # Filter out duplicates
             if trim_name.upper() in albums:
                 continue
 
@@ -125,6 +136,95 @@ class Method():
             print(album_name, "---", album["release_date"])
 
         print()
+
+
+    def createCoverFromImage(img):
+        global COVER_SIZE
+        global plane_amount
+        global materials
+        global material_index
+        # If plane amount is bigger than image size, set plane amount to image size
+        rows, cols, _ = img.shape
+        if(rows < plane_amount): 
+            if(cols < plane_amount):
+                plane_amount = cols
+            else:    
+                plane_amount = rows
+        # Select all objects
+        bpy.ops.object.select_all(action='SELECT')
+        # Delete the selected Objects
+        bpy.ops.object.delete(use_global=False, confirm=False)
+        # Delete mesh-data
+        bpy.ops.outliner.orphans_purge()
+        # Delete materials
+        for material in bpy.data.materials:
+            bpy.data.materials.remove(material, do_unlink=True)
+        verts = []
+
+        cover_mesh = bpy.data.meshes.new("cover mesh")
+        cover_object = bpy.data.objects.new("cover", cover_mesh)
+        bpy.context.collection.objects.link(cover_object)
+        bm = bmesh.new()
+        bm.from_mesh(cover_mesh)
+
+        # Create Material
+        for i in range(plane_amount):
+            for j in range(plane_amount):
+                Method.createMaterial(img[int(i*rows/plane_amount), int(j*cols/plane_amount)])
+        # adds all materials to the object      
+        for i in range(len(materials)):
+            cover_object.data.materials.append(materials[i])            
+        #  Creating the verts
+        for x in range(plane_amount + 1):
+            verts.append([])
+            for y in range(plane_amount + 1):
+                new_vert = bm.verts.new(
+                    (0, (y - plane_amount/2)/(plane_amount/ COVER_SIZE), -(x-plane_amount/2)/(plane_amount/ COVER_SIZE)))
+                verts[x].append(new_vert)
+        # Connect 4 verts to a face and append to faces array
+        bm.verts.ensure_lookup_table()
+        face_counter = 0
+        for x in range(len(verts)-1):
+            for y in range(len(verts[x])-1):
+                new_face = bm.faces.new(
+                    (verts[x][y], verts[x][y+1], verts[x+1][y+1], verts[x+1][y]))
+                new_face.material_index = material_index[face_counter]
+                face_counter += 1
+
+        bm.to_mesh(cover_mesh)
+        bm.free()
+
+    # creates a new material or matches material index with the appropriate material for the faces
+    def createMaterial(color):
+        global materials
+        global material_index
+
+        new_color = (round(color[2]/255, 1),
+                    round(color[1]/255, 1), 
+                    round(color[0]/255, 1), 
+                    1) 
+        # check if a similar color already exists and if so, return its index
+        index = Method.material_is_already_available(new_color)
+        # if color exists already append it. Otherwise create a new material.
+        if(index == -1):
+            new_mat = bpy.data.materials.new(
+                'mat_' + str(len(materials)))
+            new_mat.diffuse_color = new_color
+            material_index.append(len(materials))
+            materials.append(new_mat)
+        else: 
+            material_index.append(index)
+
+    # check if there is already a material for a specific color. If so return its index. Otherwise return -1.
+    def material_is_already_available(color):
+        global materials
+        global COLOR_DIFFERECE
+        for i in range(len(materials)):
+            if (materials[i].diffuse_color[0] + COLOR_DIFFERECE > color[0] and materials[i].diffuse_color[0] - COLOR_DIFFERECE < color[0]):
+                if (materials[i].diffuse_color[1] + COLOR_DIFFERECE > color[1] and materials[i].diffuse_color[1] - COLOR_DIFFERECE < color[1]):
+                    if(materials[i].diffuse_color[2] + COLOR_DIFFERECE > color[2] and materials[i].diffuse_color[2] - COLOR_DIFFERECE < color[2]):
+                        return i
+        return -1
 
     # Clears console
     def clear():
