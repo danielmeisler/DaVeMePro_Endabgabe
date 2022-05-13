@@ -7,9 +7,9 @@ import requests
 import os
 
 bl_info = {
-    "name": "Basic Addon",
+    "name": "Create Songcover",
     "author": "Samuel Kasper, Alexander Reiprich, David Niemann, Daniel Meisler",
-    "version": (1, 0),
+    "version": (1.2, 0),
     "blender": (2, 91, 0),
     "category": "Add Mesh",
 }
@@ -20,7 +20,7 @@ def main():
     # löscht selektierte objekte
     bpy.ops.object.delete(use_global=False, confirm=False)
     bpy.ops.outliner.orphans_purge()  # löscht überbleibende Meshdaten etc.
-    Method()
+    Songcover()
 
 
 CLIENT_ID = "56651af3c4134034b9977c0a650b2cdf"
@@ -55,11 +55,11 @@ headers = {
 }
 
 
-class Method():
+class Songcover():
     def __init__(self):
         print("Init")
-        Method.clear()
-        Method.getSongImage("2TmqHjg7uhizGndzXQdFuf")
+        Songcover.clear()
+        Songcover.getSongImage("2TmqHjg7uhizGndzXQdFuf")
 
         # Opens login screen -> After redirect, you can see the users code. (Live Server must be active!)
     def requestAuthorization():
@@ -88,7 +88,7 @@ class Method():
 
 
     def getSongImage(track_id):
-        Method.getSong(track_id)
+        Songcover.getSong(track_id)
         r = requests.get(BASE_URL + "tracks/" + track_id, headers=headers)
         d = r.json()
 
@@ -96,7 +96,7 @@ class Method():
         cover_image = requests.get(d["album"]["images"][0]['url'])
         img_string = np.frombuffer(cover_image.content, np.uint8)
         img = cv2.imdecode(img_string, cv2.IMREAD_COLOR)
-        Method.createCoverFromImage(img)
+        Songcover.createCoverFromImage(img)
 
         # Show pixeled cover image
         """ resized = cv2.resize(img, (100, 100), interpolation=cv2.INTER_NEAREST)
@@ -170,7 +170,7 @@ class Method():
         # Create Material
         for i in range(plane_amount):
             for j in range(plane_amount):
-                Method.createMaterial(img[int(i*rows/plane_amount), int(j*cols/plane_amount)])
+                Songcover.createMaterial(img[int(i*rows/plane_amount), int(j*cols/plane_amount)])
         # adds all materials to the object      
         for i in range(len(materials)):
             cover_object.data.materials.append(materials[i])            
@@ -204,7 +204,7 @@ class Method():
                     round(color[0]/255, 1), 
                     1) 
         # check if a similar color already exists and if so, return its index
-        index = Method.material_is_already_available(new_color)
+        index = Songcover.material_is_already_available(new_color)
         # if color exists already append it. Otherwise create a new material.
         if(index == -1):
             new_mat = bpy.data.materials.new(
@@ -231,9 +231,9 @@ class Method():
         os.system('cls')
 
 
-class AutostartThing(bpy.types.Operator):
+class Autostart(bpy.types.Operator):
     bl_idname = "object.test"
-    bl_label = "BasicAddonTest"
+    bl_label = "Create Songcover"
     bl_options = {"REGISTER", "UNDO"}
 
     @classmethod
@@ -246,11 +246,11 @@ class AutostartThing(bpy.types.Operator):
 
 
 def register():
-    bpy.utils.register_class(AutostartThing)
+    bpy.utils.register_class(Autostart)
 
 
 def unregister():
-    bpy.utils.unregister_class(AutostartThing)
+    bpy.utils.unregister_class(Autostart)
 
 
 if __name__ == "__main__":
