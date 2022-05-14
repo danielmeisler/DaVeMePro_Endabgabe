@@ -1,3 +1,4 @@
+import time
 import bmesh
 import requests
 import os
@@ -5,19 +6,22 @@ import cv2
 import numpy as np
 import webbrowser
 import bpy
+import base64
 
 CLIENT_ID = "56651af3c4134034b9977c0a650b2cdf"
 CLIENT_SECRET = "ba05f9e81dbc4443857aa9f3afcfc88b"
 REDIRECT_URL = "http://127.0.0.1:5555/callback.html"
-# DO NOT PUSH WHEN USER_CODE IS NOT ""!!!
-USER_CODE = ""
+
+# DO NOT PUSH WHEN USER_CODE AND access_token_user IS NOT ""!!!
+user_code = ""
+access_token_user = ""
 
 AUTH_URL = "https://accounts.spotify.com/api/token"
 CLIENT_AUTH_URL = "https://accounts.spotify.com/authorize"
 BASE_URL = "https://api.spotify.com/v1/"
 
-COVER_SIZE = 10 # size of the total
-COLOR_DIFFERECE = 0.2 # distance of the color components until a new material is created
+COVER_SIZE = 10 # size of the total cover
+COLOR_DIFFERECE = 0.2 # distance between the color components until a new material is created
 
 plane_amount = 200  # Length of the square covers
 materials = [] # saves all materials
@@ -36,8 +40,8 @@ headers = {
     'Authorization': 'Bearer {token}'.format(token=access_token)
 }
 
-# Opens login screen -> After redirect, you can see the users code. (Live Server must be active!)
-
+# Opens login screen -> After redirect, you can see the code. (Live Server must be active!)
+# This code goes into "USER_CODE"
 
 def requestAuthorization():
     url = CLIENT_AUTH_URL
@@ -45,11 +49,65 @@ def requestAuthorization():
     url += "&response_type=code"
     url += "&redirect_uri=" + REDIRECT_URL
     url += "&show_dialog=true"
-    url += "&scope=user-read-private user-read-email user-modify-playback-state user-read-playback-position user-library-read streaming user-read-playback-state user-read-recently-played playlist-read-private"
+    url += "&scope=user-read-currently-playing user-read-playback-position user-read-playback-state"
     webbrowser.open(url, new=0, autoraise=True)
 
-# Gets song from track id
 
+# Gets the access token from the user code from the function above
+# This code automatically gets stored in "access_token_user" and is needed for anything that has to do with user activity
+
+def getAccessToken():
+    encoded = base64.b64encode((CLIENT_ID + ":" + CLIENT_SECRET).encode("utf-8")).decode("utf-8")
+    headers={
+            "Authorization": f"Basic {encoded}",
+            "Content-Type": "application/x-www-form-urlencoded"
+    }
+    r = requests.post(
+        url="https://accounts.spotify.com/api/token", 
+        data={
+            "code": user_code,
+            "grant_type": "authorization_code",
+            "redirect_uri": "http://127.0.0.1:5555/callback.html"
+        }, 
+        headers=headers,
+        json=True
+    )
+    access_token_user = r.json().get("access_token")
+    print(access_token_user)
+
+# Returns an object containing information about the currently played song
+
+def getCurrentlyPlayedSong(): 
+    curPlayingUrl = BASE_URL + "me/player/currently-playing"
+    header = {
+        'Authorization': f'Bearer {access_token_user}'.format(token=access_token)
+    }
+    r = requests.get(url = curPlayingUrl, headers=header)
+    
+    respJson = r.json()
+
+    track_id = respJson["item"]["id"]
+    track_name = respJson["item"]["name"]
+    artists = respJson["item"]["artists"]
+    artists_names = ", ".join([artist["name"] for artist in artists])
+    link = respJson["item"]["external_urls"]["spotify"]
+
+    currentTrackInfo = {
+        "id": track_id,
+        "name": track_name,
+        "artists": artists_names,
+        "link": link
+    }
+    return currentTrackInfo
+
+# Gets cover of current song
+
+def getCoverOfCurrentSong():
+    currentTrackId = getCurrentlyPlayedSong()["id"]
+    getSongImage(currentTrackId)
+
+
+# Gets song from track id
 
 def getSong(track_id):
     r = requests.get(BASE_URL + "tracks/" + track_id, headers=headers)
@@ -57,12 +115,11 @@ def getSong(track_id):
 
     artist = d["artists"][0]["name"]
     track = d["name"]
-    print("--- Chosen Track ---")
     print(artist, "-", track)
     print()
 
-# Gets cover from song
 
+# Gets cover from track id
 
 def getSongImage(track_id):
     getSong(track_id)
@@ -76,16 +133,14 @@ def getSongImage(track_id):
     createCoverFromImage(img)
 
     # Show pixeled cover image
-    """ resized = cv2.resize(img, (100, 100), interpolation=cv2.INTER_NEAREST)
+    """resized = cv2.resize(img, (100, 100), interpolation=cv2.INTER_NEAREST)
     cv2.namedWindow('img', cv2.WINDOW_NORMAL)
     cv2.resizeWindow('img', 500, 500)
     cv2.imshow('img', resized)
-    cv2.waitKey(0) """
+    cv2.waitKey(0)"""
 
-# Get image part end
 
-# Gets all albums from artist
-
+# Gets all albums from artist | test function, could be removed?
 
 def getArtistsAlbums(artist_id):
 
@@ -114,6 +169,22 @@ def getArtistsAlbums(artist_id):
 
     print()
 
+
+# Loop that checks if the song has changed
+
+def updateCurrentSong():
+    song_id = ""
+    while True:
+        song_info = getCurrentlyPlayedSong()
+        if song_info["id"] != song_id:
+            song_id = song_info["id"]
+            clear()
+            print("--- Now Playing ---")
+            getSong(song_id)
+        time.sleep(1)
+
+
+# Creates cover from image retrieved in getSongImage()
 
 def createCoverFromImage(img):
     global COVER_SIZE
@@ -171,7 +242,9 @@ def createCoverFromImage(img):
     bm.to_mesh(cover_mesh)
     bm.free()
 
+
 # creates a new material or matches material index with the appropriate material for the faces
+
 def createMaterial(color):
     global materials
     global material_index
@@ -192,7 +265,9 @@ def createMaterial(color):
     else: 
         material_index.append(index)
 
-# check if there is already a material for a specific color. If so return its index. Otherwise return -1.
+
+# checks if there is already a material for a specific color. If so, returns its index. Otherwise returns -1.
+
 def material_is_already_available(color):
     global materials
     global COLOR_DIFFERECE
@@ -203,6 +278,7 @@ def material_is_already_available(color):
                     return i
     return -1
 
+# Clears console
 
 def clear():
     os.system('cls')
@@ -211,6 +287,10 @@ def clear():
 if (__name__ == "__main__"):
     clear()
     # requestAuthorization()
+    # getAccessToken()
     # getSong("3I2Jrz7wTJTVZ9fZ6V3rQx")
     # getArtistsAlbums("26T3LtbuGT1Fu9m0eRq5X3")
-    getSongImage("2TmqHjg7uhizGndzXQdFuf")
+    # getSongImage(getCurrentlyPlayedSong()["id"])
+    # getCoverOfCurrentSong()
+    # getCurrentlyPlayedSong()
+    # updateCurrentSong()
