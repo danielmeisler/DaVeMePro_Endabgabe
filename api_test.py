@@ -1,3 +1,4 @@
+from cmath import pi
 import time
 import bmesh
 import requests
@@ -198,15 +199,7 @@ def createCoverFromImage(img):
             plane_amount = cols
         else:    
             plane_amount = rows
-    # Select all objects
-    bpy.ops.object.select_all(action='SELECT')
-    # Delete the selected Objects
-    bpy.ops.object.delete(use_global=False, confirm=False)
-    # Delete mesh-data
-    bpy.ops.outliner.orphans_purge()
-    # Delete materials
-    for material in bpy.data.materials:
-        bpy.data.materials.remove(material, do_unlink=True)
+
     verts = []
 
     cover_mesh = bpy.data.meshes.new("cover mesh")
@@ -214,6 +207,7 @@ def createCoverFromImage(img):
     bpy.context.collection.objects.link(cover_object)
     bm = bmesh.new()
     bm.from_mesh(cover_mesh)
+    #cover_object.parent = bpy.data.objects["skyscraper"]
 
     # Create Material
     for i in range(plane_amount):
@@ -241,6 +235,8 @@ def createCoverFromImage(img):
 
     bm.to_mesh(cover_mesh)
     bm.free()
+    bpy.data.objects["cover"].location[0] = 6
+    bpy.data.objects["cover"].location[2] = 38
 
 
 # creates a new material or matches material index with the appropriate material for the faces
@@ -282,15 +278,35 @@ def material_is_already_available(color):
 
 def clear():
     os.system('cls')
+    # Select all objects
+    bpy.ops.object.select_all(action='SELECT')
+    # Delete the selected Objects
+    bpy.ops.object.delete(use_global=False, confirm=False)
+    # Delete mesh-data
+    bpy.ops.outliner.orphans_purge()
+    # Delete materials
+    for material in bpy.data.materials:
+        bpy.data.materials.remove(material, do_unlink=True)
 
+# import assets for the environment
+
+def createEnvironment():
+    bpy.ops.wm.open_mainfile(filepath="skyscraper.blend")
+    skyscraper_degree = 90
+    skyscraper_scale = 6
+    bpy.data.objects["skyscraper"].rotation_euler[2] = skyscraper_degree * pi / 180
+    bpy.data.objects["skyscraper"].location[2] *= skyscraper_scale
+    for i in range(3):
+        bpy.data.objects["skyscraper"].scale[i] = skyscraper_scale
 
 if (__name__ == "__main__"):
     clear()
+    createEnvironment()
     # requestAuthorization()
     # getAccessToken()
     # getSong("3I2Jrz7wTJTVZ9fZ6V3rQx")
     # getArtistsAlbums("26T3LtbuGT1Fu9m0eRq5X3")
-    # getSongImage(getCurrentlyPlayedSong()["id"])
+    getSongImage("3I2Jrz7wTJTVZ9fZ6V3rQx")
     # getCoverOfCurrentSong()
     # getCurrentlyPlayedSong()
     # updateCurrentSong()
