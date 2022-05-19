@@ -21,12 +21,16 @@ AUTH_URL = "https://accounts.spotify.com/api/token"
 CLIENT_AUTH_URL = "https://accounts.spotify.com/authorize"
 BASE_URL = "https://api.spotify.com/v1/"
 
-COVER_SIZE = 10 # size of the total cover
-COLOR_DIFFERECE = 0.2 # distance between the color components until a new material is created
+COVER_SIZE = 10  # size of the total cover
+# distance between the color components until a new material is created
+COLOR_DIFFERECE = 0.2
+COVER_POSITION_X = 6
+COVER_POSITION_Y = 0
+COVER_POSITION_Z = 38
 
 plane_amount = 200  # Length of the square covers
-materials = [] # saves all materials
-material_index = [] # Indices which materials should be assigned to the faces
+materials = []  # saves all materials
+material_index = []  # Indices which materials should be assigned to the faces
 
 # get access token
 auth_response = requests.post(AUTH_URL, {
@@ -44,6 +48,7 @@ headers = {
 # Opens login screen -> After redirect, you can see the code. (Live Server must be active!)
 # This code goes into "USER_CODE"
 
+
 def requestAuthorization():
     url = CLIENT_AUTH_URL
     url += "?client_id=" + CLIENT_ID
@@ -58,18 +63,19 @@ def requestAuthorization():
 # This code automatically gets stored in "access_token_user" and is needed for anything that has to do with user activity
 
 def getAccessToken():
-    encoded = base64.b64encode((CLIENT_ID + ":" + CLIENT_SECRET).encode("utf-8")).decode("utf-8")
-    headers={
-            "Authorization": f"Basic {encoded}",
-            "Content-Type": "application/x-www-form-urlencoded"
+    encoded = base64.b64encode(
+        (CLIENT_ID + ":" + CLIENT_SECRET).encode("utf-8")).decode("utf-8")
+    headers = {
+        "Authorization": f"Basic {encoded}",
+        "Content-Type": "application/x-www-form-urlencoded"
     }
     r = requests.post(
-        url="https://accounts.spotify.com/api/token", 
+        url="https://accounts.spotify.com/api/token",
         data={
             "code": user_code,
             "grant_type": "authorization_code",
             "redirect_uri": "http://127.0.0.1:5555/callback.html"
-        }, 
+        },
         headers=headers,
         json=True
     )
@@ -78,13 +84,14 @@ def getAccessToken():
 
 # Returns an object containing information about the currently played song
 
-def getCurrentlyPlayedSong(): 
+
+def getCurrentlyPlayedSong():
     curPlayingUrl = BASE_URL + "me/player/currently-playing"
     header = {
         'Authorization': f'Bearer {access_token_user}'.format(token=access_token)
     }
-    r = requests.get(url = curPlayingUrl, headers=header)
-    
+    r = requests.get(url=curPlayingUrl, headers=header)
+
     respJson = r.json()
 
     track_id = respJson["item"]["id"]
@@ -102,6 +109,7 @@ def getCurrentlyPlayedSong():
     return currentTrackInfo
 
 # Gets cover of current song
+
 
 def getCoverOfCurrentSong():
     currentTrackId = getCurrentlyPlayedSong()["id"]
@@ -189,15 +197,18 @@ def updateCurrentSong():
 
 def createCoverFromImage(img):
     global COVER_SIZE
+    global COVER_POSITION_X
+    global COVER_POSITION_Y
+    global COVER_POSITION_Z
     global plane_amount
     global materials
     global material_index
     # If plane amount is bigger than image size, set plane amount to image size
     rows, cols, _ = img.shape
-    if(rows < plane_amount): 
+    if(rows < plane_amount):
         if(cols < plane_amount):
             plane_amount = cols
-        else:    
+        else:
             plane_amount = rows
 
     verts = []
@@ -212,16 +223,17 @@ def createCoverFromImage(img):
     # Create Material
     for i in range(plane_amount):
         for j in range(plane_amount):
-            createMaterial(img[int(i*rows/plane_amount), int(j*cols/plane_amount)])
-    # adds all materials to the object      
+            createMaterial(img[int(i*rows/plane_amount),
+                           int(j*cols/plane_amount)])
+    # adds all materials to the object
     for i in range(len(materials)):
-         cover_object.data.materials.append(materials[i])            
+        cover_object.data.materials.append(materials[i])
     #  Creating the verts
     for x in range(plane_amount + 1):
         verts.append([])
         for y in range(plane_amount + 1):
             new_vert = bm.verts.new(
-                (0, (y - plane_amount/2)/(plane_amount/ COVER_SIZE), -(x-plane_amount/2)/(plane_amount/ COVER_SIZE)))
+                (COVER_POSITION_X, ((y - plane_amount/2)/(plane_amount / COVER_SIZE)) + COVER_POSITION_Y, (-(x-plane_amount/2)/(plane_amount / COVER_SIZE))+COVER_POSITION_Z))
             verts[x].append(new_vert)
     # Connect 4 verts to a face and append to faces array
     bm.verts.ensure_lookup_table()
@@ -235,8 +247,9 @@ def createCoverFromImage(img):
 
     bm.to_mesh(cover_mesh)
     bm.free()
-    bpy.data.objects["cover"].location[0] = 6
-    bpy.data.objects["cover"].location[2] = 38
+    """ bpy.data.objects["cover"].location[0] = COVER_POSITION_X
+    bpy.data.objects["cover"].location[0] = COVER_POSITION_Y
+    bpy.data.objects["cover"].location[2] = COVER_POSITION_Z """
 
 
 # creates a new material or matches material index with the appropriate material for the faces
@@ -246,9 +259,9 @@ def createMaterial(color):
     global material_index
 
     new_color = (round(color[2]/255, 1),
-                 round(color[1]/255, 1), 
-                 round(color[0]/255, 1), 
-                 1) 
+                 round(color[1]/255, 1),
+                 round(color[0]/255, 1),
+                 1)
     # check if a similar color already exists and if so, return its index
     index = material_is_already_available(new_color)
     # if color exists already append it. Otherwise create a new material.
@@ -258,7 +271,7 @@ def createMaterial(color):
         new_mat.diffuse_color = new_color
         material_index.append(len(materials))
         materials.append(new_mat)
-    else: 
+    else:
         material_index.append(index)
 
 
@@ -276,6 +289,7 @@ def material_is_already_available(color):
 
 # Clears console
 
+
 def clear():
     os.system('cls')
     # Select all objects
@@ -290,6 +304,7 @@ def clear():
 
 # import assets for the environment
 
+
 def createEnvironment():
     bpy.ops.wm.open_mainfile(filepath="skyscraper.blend")
     skyscraper_degree = 90
@@ -298,6 +313,7 @@ def createEnvironment():
     bpy.data.objects["skyscraper"].location[2] *= skyscraper_scale
     for i in range(3):
         bpy.data.objects["skyscraper"].scale[i] = skyscraper_scale
+
 
 if (__name__ == "__main__"):
     clear()
