@@ -1,6 +1,6 @@
+
 from cmath import pi
 import time
-import bmesh
 import requests
 import os
 import cv2
@@ -24,9 +24,7 @@ BASE_URL = "https://api.spotify.com/v1/"
 COVER_SIZE = 10  # size of the total cover
 # distance between the color components until a new material is created
 COLOR_DIFFERECE = 0.2
-COVER_POSITION_X = 6
-COVER_POSITION_Y = 0
-COVER_POSITION_Z = 38
+COVER_POSITION = (6, 0, 38)
 
 plane_amount = 200  # Length of the square covers
 materials = []  # saves all materials
@@ -138,7 +136,9 @@ def getSongImage(track_id):
     # Get image part
     cover_image = requests.get(d["album"]["images"][0]['url'])
     img_string = np.frombuffer(cover_image.content, np.uint8)
-    img = cv2.imdecode(img_string, cv2.IMREAD_COLOR)
+    img = cv2.imdecode(img_string, cv2.IMREAD_UNCHANGED)
+    """  with open("coverImage.png", 'wb') as f:
+        f.write(cover_image.content) """
     createCoverFromImage(img)
 
     # Show pixeled cover image
@@ -197,95 +197,34 @@ def updateCurrentSong():
 
 def createCoverFromImage(img):
     global COVER_SIZE
-    global COVER_POSITION_X
-    global COVER_POSITION_Y
-    global COVER_POSITION_Z
-    global plane_amount
-    global materials
-    global material_index
-    # If plane amount is bigger than image size, set plane amount to image size
-    rows, cols, _ = img.shape
-    if(rows < plane_amount):
-        if(cols < plane_amount):
-            plane_amount = cols
-        else:
-            plane_amount = rows
-
-    verts = []
-
-    cover_mesh = bpy.data.meshes.new("cover mesh")
-    cover_object = bpy.data.objects.new("cover", cover_mesh)
-    bpy.context.collection.objects.link(cover_object)
-    bm = bmesh.new()
-    bm.from_mesh(cover_mesh)
-    #cover_object.parent = bpy.data.objects["skyscraper"]
-
-    # Create Material
-    for i in range(plane_amount):
-        for j in range(plane_amount):
-            createMaterial(img[int(i*rows/plane_amount),
-                           int(j*cols/plane_amount)])
-    # adds all materials to the object
-    for i in range(len(materials)):
-        cover_object.data.materials.append(materials[i])
-    #  Creating the verts
-    for x in range(plane_amount + 1):
-        verts.append([])
-        for y in range(plane_amount + 1):
-            new_vert = bm.verts.new(
-                (COVER_POSITION_X, ((y - plane_amount/2)/(plane_amount / COVER_SIZE)) + COVER_POSITION_Y, (-(x-plane_amount/2)/(plane_amount / COVER_SIZE))+COVER_POSITION_Z))
-            verts[x].append(new_vert)
-    # Connect 4 verts to a face and append to faces array
-    bm.verts.ensure_lookup_table()
-    face_counter = 0
-    for x in range(len(verts)-1):
-        for y in range(len(verts[x])-1):
-            new_face = bm.faces.new(
-                (verts[x][y], verts[x][y+1], verts[x+1][y+1], verts[x+1][y]))
-            new_face.material_index = material_index[face_counter]
-            face_counter += 1
-
-    bm.to_mesh(cover_mesh)
-    bm.free()
-    """ bpy.data.objects["cover"].location[0] = COVER_POSITION_X
-    bpy.data.objects["cover"].location[0] = COVER_POSITION_Y
-    bpy.data.objects["cover"].location[2] = COVER_POSITION_Z """
+    global COVER_POSITION
+    bpy.ops.mesh.primitive_plane_add(
+        size=COVER_SIZE, location=COVER_POSITION, rotation=(pi/2, pi, pi/2))
+    cover_object: bpy.types.Object = bpy.data.objects["Plane"]
+    mat = createCoverMaterial(img)
+    cover_object.data.materials.append(mat)
+ 
 
 
-# creates a new material or matches material index with the appropriate material for the faces
-
-def createMaterial(color):
-    global materials
-    global material_index
-
-    new_color = (round(color[2]/255, 1),
-                 round(color[1]/255, 1),
-                 round(color[0]/255, 1),
-                 1)
-    # check if a similar color already exists and if so, return its index
-    index = material_is_already_available(new_color)
-    # if color exists already append it. Otherwise create a new material.
-    if(index == -1):
-        new_mat = bpy.data.materials.new(
-            'mat_' + str(len(materials)))
-        new_mat.diffuse_color = new_color
-        material_index.append(len(materials))
-        materials.append(new_mat)
-    else:
-        material_index.append(index)
-
-
-# checks if there is already a material for a specific color. If so, returns its index. Otherwise returns -1.
-
-def material_is_already_available(color):
-    global materials
-    global COLOR_DIFFERECE
-    for i in range(len(materials)):
-        if (materials[i].diffuse_color[0] + COLOR_DIFFERECE > color[0] and materials[i].diffuse_color[0] - COLOR_DIFFERECE < color[0]):
-            if (materials[i].diffuse_color[1] + COLOR_DIFFERECE > color[1] and materials[i].diffuse_color[1] - COLOR_DIFFERECE < color[1]):
-                if(materials[i].diffuse_color[2] + COLOR_DIFFERECE > color[2] and materials[i].diffuse_color[2] - COLOR_DIFFERECE < color[2]):
-                    return i
-    return -1
+def createCoverMaterial(cover_img):
+    global COVER_SIZE
+    mat: bpy.types.Material = bpy.data.materials.new("mat_Cover")
+    mat.use_nodes = True
+    nodeTree: bpy.types.NodeTree = mat.node_tree
+    bsdf = mat.node_tree.nodes["Principled BSDF"]
+    texImage = nodeTree.nodes.new('ShaderNodeTexImage')
+    rgba = cv2.cvtColor(cover_img, cv2.COLOR_RGB2BGRA)
+    rows, cols, colors = cover_img.shape
+    l = rgba.reshape(-2)
+    listpixel = l.tolist()
+    pxl = [i/255 for i in listpixel]
+    img = bpy.data.images.new(
+        "cover image", width=rows, height=cols)
+    img.pixels.foreach_set(pxl)
+    texImage.image = img
+    nodeTree.links.new(
+        bsdf.inputs['Base Color'], texImage.outputs['Color'])
+    return mat
 
 # Clears console
 
@@ -317,7 +256,7 @@ def createEnvironment():
 
 if (__name__ == "__main__"):
     clear()
-    createEnvironment()
+    # createEnvironment()
     # requestAuthorization()
     # getAccessToken()
     # getSong("3I2Jrz7wTJTVZ9fZ6V3rQx")
