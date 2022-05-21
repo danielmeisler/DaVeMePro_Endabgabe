@@ -196,9 +196,18 @@ def updateCurrentSong():
 def createCoverFromImage(img):
     global COVER_SIZE
     global COVER_POSITION
+
+    collection = bpy.data.collections.new("Leuchtbilder")
+    bpy.context.scene.collection.children["Leuchtbildtafel"].children.link(collection)
+
+    layer_collection = bpy.context.view_layer.layer_collection.children["Leuchtbildtafel"].children[collection.name]
+    bpy.context.view_layer.active_layer_collection = layer_collection
+ 
     bpy.ops.mesh.primitive_plane_add(
         size=COVER_SIZE, location=COVER_POSITION, rotation=(pi/2, 0, pi))
+   
     cover_object: bpy.types.Object = bpy.data.objects["Plane"]
+    
     mat = createCoverMaterial(img)
     cover_object.data.materials.append(mat)
     cover_object.name = "cover"
@@ -212,6 +221,7 @@ def createCoverMaterial(cover_img):
     node_tree: bpy.types.NodeTree = mat.node_tree
 
     bsdf = mat.node_tree.nodes["Principled BSDF"]
+    bsdf.inputs[20].default_value = 4
     tex_image = node_tree.nodes.new('ShaderNodeTexImage')
 
     rgba = cv2.cvtColor(cover_img, cv2.COLOR_RGB2BGRA)
