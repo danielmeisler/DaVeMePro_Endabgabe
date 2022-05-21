@@ -260,13 +260,13 @@ def clear():
 
 
 def createEnvironment():
-    bpy.ops.wm.open_mainfile(filepath="skyscraper.blend")
-    skyscraper_degree = 90
+    bpy.ops.wm.open_mainfile(filepath="DAVT_Project_Scene.blend")
+    """ skyscraper_degree = 90
     skyscraper_scale = 6
     bpy.data.objects["skyscraper"].rotation_euler[2] = skyscraper_degree * pi / 180
     bpy.data.objects["skyscraper"].location[2] *= skyscraper_scale
     for i in range(3):
-        bpy.data.objects["skyscraper"].scale[i] = skyscraper_scale
+        bpy.data.objects["skyscraper"].scale[i] = skyscraper_scale """
 
 
 if (__name__ == "__main__"):
