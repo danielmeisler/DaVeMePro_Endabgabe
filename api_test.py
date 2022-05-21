@@ -21,9 +21,9 @@ AUTH_URL = "https://accounts.spotify.com/api/token"
 CLIENT_AUTH_URL = "https://accounts.spotify.com/authorize"
 BASE_URL = "https://api.spotify.com/v1/"
 
-COVER_SIZE = 10  # size of the total cover
+COVER_SIZE = 1.2  # size of the total cover
 # distance between the color components until a new material is created
-COVER_POSITION = (0, 0, 38)
+COVER_POSITION = (-2.6819, 1.10, 3.34549)
 
 PIXEL_LEVEL = 0.01
 
@@ -273,7 +273,7 @@ def createEnvironment():
 
 if (__name__ == "__main__"):
     clear()
-    # createEnvironment()
+    createEnvironment()
     # requestAuthorization()
     # getAccessToken()
     # getSong("3I2Jrz7wTJTVZ9fZ6V3rQx")
