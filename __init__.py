@@ -1,10 +1,12 @@
-import webbrowser
-import bmesh
-import numpy as np
-import cv2
-import bpy
+from cmath import pi
+import time
 import requests
 import os
+import cv2
+import numpy as np
+import webbrowser
+import bpy
+import base64
 
 bl_info = {
     "name": "Create Songcover",
@@ -26,20 +28,20 @@ def main():
 CLIENT_ID = "56651af3c4134034b9977c0a650b2cdf"
 CLIENT_SECRET = "ba05f9e81dbc4443857aa9f3afcfc88b"
 REDIRECT_URL = "http://127.0.0.1:5555/callback.html"
-# DO NOT PUSH WHEN USER_CODE IS NOT ""!!!
-USER_CODE = ""
+
+# DO NOT PUSH WHEN USER_CODE AND access_token_user IS NOT ""!!!
+user_code = ""
+access_token_user = ""
 
 AUTH_URL = "https://accounts.spotify.com/api/token"
 CLIENT_AUTH_URL = "https://accounts.spotify.com/authorize"
 BASE_URL = "https://api.spotify.com/v1/"
 
-COVER_SIZE = 10 # size of the total
-COLOR_DIFFERECE = 0.2 # distance of the color components until a new material is created
+COVER_SIZE = 1.2  # size of the total cover
+# distance between the color components until a new material is created
+COVER_POSITION = (-2.6819, 1.10, 3.34549)
 
-plane_amount = 200  # Length of the square covers
-materials = [] # saves all materials
-material_index = [] # Indices which materials should be assigned to the faces
-
+PIXEL_LEVEL = 0.01
 
 # get access token
 auth_response = requests.post(AUTH_URL, {
@@ -59,7 +61,15 @@ class Songcover():
     def __init__(self):
         print("Init")
         Songcover.clear()
-        Songcover.getSongImage("2TmqHjg7uhizGndzXQdFuf")
+        Songcover.createEnvironment()
+        # requestAuthorization()
+        # getAccessToken()
+        # getSong("3I2Jrz7wTJTVZ9fZ6V3rQx")
+        # getArtistsAlbums("26T3LtbuGT1Fu9m0eRq5X3")
+        Songcover.getSongImage("3I2Jrz7wTJTVZ9fZ6V3rQx")
+        # getCoverOfCurrentSong()
+        # getCurrentlyPlayedSong()
+        # updateCurrentSong()
 
         # Opens login screen -> After redirect, you can see the users code. (Live Server must be active!)
     def requestAuthorization():
@@ -73,6 +83,52 @@ class Songcover():
 
     # Gets song from track id
 
+    def getAccessToken():
+        encoded = base64.b64encode(
+            (CLIENT_ID + ":" + CLIENT_SECRET).encode("utf-8")).decode("utf-8")
+        headers = {
+            "Authorization": f"Basic {encoded}",
+            "Content-Type": "application/x-www-form-urlencoded"
+        }
+        r = requests.post(
+            url="https://accounts.spotify.com/api/token",
+            data={
+                "code": user_code,
+                "grant_type": "authorization_code",
+                "redirect_uri": "http://127.0.0.1:5555/callback.html"
+            },
+            headers=headers,
+            json=True
+        )
+        access_token_user = r.json().get("access_token")
+        print(access_token_user)
+
+    def getCurrentlyPlayedSong():
+        curPlayingUrl = BASE_URL + "me/player/currently-playing"
+        header = {
+            'Authorization': f'Bearer {access_token_user}'.format(token=access_token)
+        }
+        r = requests.get(url=curPlayingUrl, headers=header)
+
+        respJson = r.json()
+
+        track_id = respJson["item"]["id"]
+        track_name = respJson["item"]["name"]
+        artists = respJson["item"]["artists"]
+        artists_names = ", ".join([artist["name"] for artist in artists])
+        link = respJson["item"]["external_urls"]["spotify"]
+
+        currentTrackInfo = {
+            "id": track_id,
+            "name": track_name,
+            "artists": artists_names,
+            "link": link
+        }
+        return currentTrackInfo
+
+    def getCoverOfCurrentSong():
+        currentTrackId = Songcover.getCurrentlyPlayedSong()["id"]
+        Songcover.getSongImage(currentTrackId)
 
     def getSong(track_id):
         r = requests.get(BASE_URL + "tracks/" + track_id, headers=headers)
@@ -80,7 +136,6 @@ class Songcover():
 
         artist = d["artists"][0]["name"]
         track = d["name"]
-        print("--- Chosen Track ---")
         print(artist, "-", track)
         print()
 
@@ -95,15 +150,17 @@ class Songcover():
         # Get image part
         cover_image = requests.get(d["album"]["images"][0]['url'])
         img_string = np.frombuffer(cover_image.content, np.uint8)
-        img = cv2.imdecode(img_string, cv2.IMREAD_COLOR)
+        img = cv2.imdecode(img_string, cv2.IMREAD_UNCHANGED)
+        """  with open("coverImage.png", 'wb') as f:
+            f.write(cover_image.content) """
         Songcover.createCoverFromImage(img)
 
         # Show pixeled cover image
-        """ resized = cv2.resize(img, (100, 100), interpolation=cv2.INTER_NEAREST)
+        """resized = cv2.resize(img, (100, 100), interpolation=cv2.INTER_NEAREST)
         cv2.namedWindow('img', cv2.WINDOW_NORMAL)
         cv2.resizeWindow('img', 500, 500)
         cv2.imshow('img', resized)
-        cv2.waitKey(0) """
+        cv2.waitKey(0)"""
 
     # Get image part end
 
@@ -137,19 +194,82 @@ class Songcover():
 
         print()
 
+    def updateCurrentSong():
+        song_id = ""
+        while True:
+            song_info = Songcover.getCurrentlyPlayedSong()
+            if song_info["id"] != song_id:
+                song_id = song_info["id"]
+                Songcover.clear()
+                print("--- Now Playing ---")
+                Songcover.getSong(song_id)
+            Songcover.time.sleep(1)
 
     def createCoverFromImage(img):
         global COVER_SIZE
-        global plane_amount
-        global materials
-        global material_index
-        # If plane amount is bigger than image size, set plane amount to image size
-        rows, cols, _ = img.shape
-        if(rows < plane_amount): 
-            if(cols < plane_amount):
-                plane_amount = cols
-            else:    
-                plane_amount = rows
+        global COVER_POSITION
+
+        collection = bpy.data.collections.new("Leuchtbilder")
+        bpy.context.scene.collection.children["Leuchtbildtafel"].children.link(collection)
+
+        layer_collection = bpy.context.view_layer.layer_collection.children["Leuchtbildtafel"].children[collection.name]
+        bpy.context.view_layer.active_layer_collection = layer_collection
+    
+        bpy.ops.mesh.primitive_plane_add(
+            size=COVER_SIZE, location=COVER_POSITION, rotation=(pi/2, 0, pi))
+    
+        cover_object: bpy.types.Object = bpy.data.objects["Plane"]
+        
+        mat = Songcover.createCoverMaterial(img)
+        cover_object.data.materials.append(mat)
+        cover_object.name = "cover"
+
+    def createCoverMaterial(cover_img):
+        global COVER_SIZE
+        global PIXEL_LEVEL
+        mat: bpy.types.Material = bpy.data.materials.new("mat_Cover")
+        mat.use_nodes = True
+        node_tree: bpy.types.NodeTree = mat.node_tree
+
+        bsdf = mat.node_tree.nodes["Principled BSDF"]
+        bsdf.inputs[20].default_value = 4
+        tex_image = node_tree.nodes.new('ShaderNodeTexImage')
+
+        rgba = cv2.cvtColor(cover_img, cv2.COLOR_RGB2BGRA)
+        rows, cols, _ = cover_img.shape
+        reversed_y = rgba[::-1]
+        l = reversed_y.reshape(-2)
+        list_pixel = l.tolist()
+        pxl = [i/255 for i in list_pixel]
+        img = bpy.data.images.new(
+            "cover image", width=rows, height=cols)
+        img.pixels.foreach_set(pxl)
+        tex_image.image = img
+
+        node_tree.links.new(
+            bsdf.inputs['Base Color'], tex_image.outputs['Color'])
+        vcector_math = node_tree.nodes.new('ShaderNodeVectorMath')
+        node_tree.links.new(
+            tex_image.inputs['Vector'], vcector_math.outputs['Vector'])
+        vcector_math.operation = 'SNAP'
+
+        vcector_math.inputs[1].default_value[0] = PIXEL_LEVEL
+        vcector_math.inputs[1].default_value[1] = PIXEL_LEVEL
+        vcector_math.inputs[1].default_value[2] = PIXEL_LEVEL
+
+        tex_coordinates = node_tree.nodes.new('ShaderNodeTexCoord')
+        node_tree.links.new(
+            vcector_math.inputs['Vector'], tex_coordinates.outputs['Generated'])
+        node_tree.links.new(
+            bsdf.inputs['Emission'], tex_image.outputs['Color'])
+        return mat
+
+    def createEnvironment():
+        bpy.ops.wm.open_mainfile(filepath="DAVT_Project_Scene.blend")
+
+    # Clears console
+    def clear():
+        os.system('cls')
         # Select all objects
         bpy.ops.object.select_all(action='SELECT')
         # Delete the selected Objects
@@ -159,76 +279,6 @@ class Songcover():
         # Delete materials
         for material in bpy.data.materials:
             bpy.data.materials.remove(material, do_unlink=True)
-        verts = []
-
-        cover_mesh = bpy.data.meshes.new("cover mesh")
-        cover_object = bpy.data.objects.new("cover", cover_mesh)
-        bpy.context.collection.objects.link(cover_object)
-        bm = bmesh.new()
-        bm.from_mesh(cover_mesh)
-
-        # Create Material
-        for i in range(plane_amount):
-            for j in range(plane_amount):
-                Songcover.createMaterial(img[int(i*rows/plane_amount), int(j*cols/plane_amount)])
-        # adds all materials to the object      
-        for i in range(len(materials)):
-            cover_object.data.materials.append(materials[i])            
-        #  Creating the verts
-        for x in range(plane_amount + 1):
-            verts.append([])
-            for y in range(plane_amount + 1):
-                new_vert = bm.verts.new(
-                    (0, (y - plane_amount/2)/(plane_amount/ COVER_SIZE), -(x-plane_amount/2)/(plane_amount/ COVER_SIZE)))
-                verts[x].append(new_vert)
-        # Connect 4 verts to a face and append to faces array
-        bm.verts.ensure_lookup_table()
-        face_counter = 0
-        for x in range(len(verts)-1):
-            for y in range(len(verts[x])-1):
-                new_face = bm.faces.new(
-                    (verts[x][y], verts[x][y+1], verts[x+1][y+1], verts[x+1][y]))
-                new_face.material_index = material_index[face_counter]
-                face_counter += 1
-
-        bm.to_mesh(cover_mesh)
-        bm.free()
-
-    # creates a new material or matches material index with the appropriate material for the faces
-    def createMaterial(color):
-        global materials
-        global material_index
-
-        new_color = (round(color[2]/255, 1),
-                    round(color[1]/255, 1), 
-                    round(color[0]/255, 1), 
-                    1) 
-        # check if a similar color already exists and if so, return its index
-        index = Songcover.material_is_already_available(new_color)
-        # if color exists already append it. Otherwise create a new material.
-        if(index == -1):
-            new_mat = bpy.data.materials.new(
-                'mat_' + str(len(materials)))
-            new_mat.diffuse_color = new_color
-            material_index.append(len(materials))
-            materials.append(new_mat)
-        else: 
-            material_index.append(index)
-
-    # check if there is already a material for a specific color. If so return its index. Otherwise return -1.
-    def material_is_already_available(color):
-        global materials
-        global COLOR_DIFFERECE
-        for i in range(len(materials)):
-            if (materials[i].diffuse_color[0] + COLOR_DIFFERECE > color[0] and materials[i].diffuse_color[0] - COLOR_DIFFERECE < color[0]):
-                if (materials[i].diffuse_color[1] + COLOR_DIFFERECE > color[1] and materials[i].diffuse_color[1] - COLOR_DIFFERECE < color[1]):
-                    if(materials[i].diffuse_color[2] + COLOR_DIFFERECE > color[2] and materials[i].diffuse_color[2] - COLOR_DIFFERECE < color[2]):
-                        return i
-        return -1
-
-    # Clears console
-    def clear():
-        os.system('cls')
 
 
 class Autostart(bpy.types.Operator):
