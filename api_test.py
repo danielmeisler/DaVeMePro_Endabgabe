@@ -197,7 +197,7 @@ def createCoverFromImage(img):
     global COVER_SIZE
     global COVER_POSITION
     bpy.ops.mesh.primitive_plane_add(
-        size=COVER_SIZE, location=COVER_POSITION, rotation=(pi/2, 0, 0))
+        size=COVER_SIZE, location=COVER_POSITION, rotation=(pi/2, 0, pi))
     cover_object: bpy.types.Object = bpy.data.objects["Plane"]
     mat = createCoverMaterial(img)
     cover_object.data.materials.append(mat)
@@ -239,6 +239,8 @@ def createCoverMaterial(cover_img):
     tex_coordinates = node_tree.nodes.new('ShaderNodeTexCoord')
     node_tree.links.new(
         vcector_math.inputs['Vector'], tex_coordinates.outputs['Generated'])
+    node_tree.links.new(
+        bsdf.inputs['Emission'], tex_image.outputs['Color'])
     return mat
 
 # Clears console
