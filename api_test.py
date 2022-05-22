@@ -1,6 +1,5 @@
 
 from cmath import pi
-import time
 import requests
 import os
 import cv2
@@ -26,8 +25,10 @@ COVER_SIZE = 1.2  # size of the total cover
 COVER_POSITION = (-2.6819, 1.10, 3.34549)
 
 PIXEL_LEVEL = 0.01
+WAIT_TIME = 5.0
 
 
+song_id = ""
 # get access token
 auth_response = requests.post(AUTH_URL, {
     'grant_type': 'client_credentials',
@@ -87,8 +88,8 @@ def getCurrentlyPlayedSong():
         'Authorization': f'Bearer {access_token_user}'.format(token=access_token)
     }
     r = requests.get(url=curPlayingUrl, headers=header)
-
     respJson = r.json()
+
 
     track_id = respJson["item"]["id"]
     track_name = respJson["item"]["name"]
@@ -135,9 +136,7 @@ def getSongImage(track_id):
     cover_image = requests.get(d["album"]["images"][0]['url'])
     img_string = np.frombuffer(cover_image.content, np.uint8)
     img = cv2.imdecode(img_string, cv2.IMREAD_UNCHANGED)
-    """  with open("coverImage.png", 'wb') as f:
-        f.write(cover_image.content) """
-    createCoverFromImage(img)
+    create_cover_from_image(img)
 
     # Show pixeled cover image
     """resized = cv2.resize(img, (100, 100), interpolation=cv2.INTER_NEAREST)
@@ -180,40 +179,55 @@ def getArtistsAlbums(artist_id):
 # Loop that checks if the song has changed
 
 def updateCurrentSong():
-    song_id = ""
-    while True:
-        song_info = getCurrentlyPlayedSong()
-        if song_info["id"] != song_id:
-            song_id = song_info["id"]
-            clear()
-            print("--- Now Playing ---")
-            getSong(song_id)
-        time.sleep(1)
+    global song_id 
+  
+    song_info = getCurrentlyPlayedSong()
+    if song_info["id"] != song_id:
+        song_id = song_info["id"]
+        clear_console()
+        print("--- Now Playing ---")
+        getSong(song_id)
+        return True
+    return False
+        
+def update_cover(): 
+    delete_current_cover()
+    getCoverOfCurrentSong()
 
-
+def delete_current_cover():
+    bpy.ops.object.select_all(action='DESELECT')
+    cover = bpy.context.scene.objects.get('cover')
+    if cover:
+        bpy.data.objects['cover'].select_set(True)
+        bpy.ops.object.delete()
 # Creates cover from image retrieved in getSongImage()
 
-def createCoverFromImage(img):
+def generade_collection(): 
+    collection = bpy.data.collections.new("Leuchtbilder")
+    bpy.context.scene.collection.children["Leuchtbildtafel"].children.link(
+        collection)
+
+def create_cover_from_image(img):
     global COVER_SIZE
     global COVER_POSITION
 
-    collection = bpy.data.collections.new("Leuchtbilder")
-    bpy.context.scene.collection.children["Leuchtbildtafel"].children.link(collection)
+    
 
-    layer_collection = bpy.context.view_layer.layer_collection.children["Leuchtbildtafel"].children[collection.name]
+    layer_collection = bpy.context.view_layer.layer_collection.children[
+        "Leuchtbildtafel"].children["Leuchtbilder"]
     bpy.context.view_layer.active_layer_collection = layer_collection
- 
+
     bpy.ops.mesh.primitive_plane_add(
         size=COVER_SIZE, location=COVER_POSITION, rotation=(pi/2, 0, pi))
-   
+
     cover_object: bpy.types.Object = bpy.data.objects["Plane"]
-    
-    mat = createCoverMaterial(img)
+
+    mat = create_cover_material(img)
     cover_object.data.materials.append(mat)
     cover_object.name = "cover"
 
 
-def createCoverMaterial(cover_img):
+def create_cover_material(cover_img):
     global COVER_SIZE
     global PIXEL_LEVEL
     mat: bpy.types.Material = bpy.data.materials.new("mat_Cover")
@@ -254,11 +268,8 @@ def createCoverMaterial(cover_img):
     return mat
 
 # Clears console
-
-
-def clear():
-    os.system('cls')
-    # Select all objects
+def clear_environment(): 
+     # Select all objects
     bpy.ops.object.select_all(action='SELECT')
     # Delete the selected Objects
     bpy.ops.object.delete(use_global=False, confirm=False)
@@ -268,10 +279,26 @@ def clear():
     for material in bpy.data.materials:
         bpy.data.materials.remove(material, do_unlink=True)
 
+def clear_console():
+    os.system('cls')
+   
+
+
+def run_every_n_second():
+    global WAIT_TIME
+    global counter
+    global TEST_SONG_COVERS
+   
+    is_new_song = updateCurrentSong()
+    if is_new_song: 
+        update_cover()
+    #counter += 1
+    return WAIT_TIME   
+
 # import assets for the environment
 
 
-def createEnvironment():
+def create_environment():
     bpy.ops.wm.open_mainfile(filepath="DAVT_Project_Scene.blend")
     """ skyscraper_degree = 90
     skyscraper_scale = 6
@@ -282,13 +309,16 @@ def createEnvironment():
 
 
 if (__name__ == "__main__"):
-    clear()
-    createEnvironment()
+    # clear()
+    clear_environment() 
+    create_environment()
+    generade_collection()
     # requestAuthorization()
     # getAccessToken()
     # getSong("3I2Jrz7wTJTVZ9fZ6V3rQx")
     # getArtistsAlbums("26T3LtbuGT1Fu9m0eRq5X3")
-    getSongImage("3I2Jrz7wTJTVZ9fZ6V3rQx")
+    # getSongImage("3I2Jrz7wTJTVZ9fZ6V3rQx")
     # getCoverOfCurrentSong()
     # getCurrentlyPlayedSong()
     # updateCurrentSong()
+    bpy.app.timers.register(run_every_n_second)
