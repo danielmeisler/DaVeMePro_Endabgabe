@@ -1,5 +1,8 @@
+from cgi import test
 from cmath import pi
+from nturl2path import url2pathname
 import time
+from unicodedata import name
 import requests
 import os
 import cv2
@@ -55,6 +58,22 @@ access_token = auth_response_data['access_token']
 headers = {
     'Authorization': 'Bearer {token}'.format(token=access_token)
 }
+
+links = {"Spotify" : 'https://developer.spotify.com/console/get-users-currently-playing-track/?market=&additional_types=',}
+
+class test_panel(bpy.types.Panel):
+    """Creates a Panel in the scene context of the properties editor"""
+    bl_label = "Spotify Addon"
+    bl_idname = "SCENE_PT_layout"
+    bl_space_type = 'PROPERTIES'
+    bl_region_type = 'WINDOW'
+    bl_context = "scene"
+
+    def draw(self, context):
+        token_url = self.layout.operator('wm.url_open', text="get spotify token", icon="URL")
+        token_url.url = links["Spotify"]
+        #testbla = bpy.props.StringProperty(name= "enter token", default= "")
+        #self.layout.prop(context.scene, "testbla")
 
 
 class Songcover():
@@ -297,11 +316,12 @@ class Autostart(bpy.types.Operator):
 
 def register():
     bpy.utils.register_class(Autostart)
+    bpy.utils.register_class(test_panel)
 
 
 def unregister():
     bpy.utils.unregister_class(Autostart)
-
+    bpy.utils.unregister_class(test_panel)
 
 if __name__ == "__main__":
     register()
