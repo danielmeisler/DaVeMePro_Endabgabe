@@ -14,7 +14,7 @@ REDIRECT_URL = "http://127.0.0.1:5555/callback.html"
 
 # DO NOT PUSH WHEN USER_CODE AND access_token_user IS NOT ""!!!
 user_code = ""
-access_token_user = "BQCXG7EaX2gQFx9R2MEdIjNxQxnfITbUcdk0MoQK9AbhjQZRQsQUWvfiF_4F5CbIl559XYGmp6lcCnWDk_dHKQsSZYl4p0cxzfNErYhIKFukJGC7poFz5aXkSryy_MiBDaTPlyG0lhcKIuT1tu9lRiFWVR8UcSPxr-FYxiucnm1x8Q"
+access_token_user = ""
 
 AUTH_URL = "https://accounts.spotify.com/api/token"
 CLIENT_AUTH_URL = "https://accounts.spotify.com/authorize"
@@ -182,22 +182,9 @@ def getCoverOfCurrentSong():
     getSongImage(currentTrackId)
 
 
-# Gets song from track id
-
-def getSong(track_id):
-    r = requests.get(BASE_URL + "tracks/" + track_id, headers=headers)
-    d = r.json()
-
-    artist = d["artists"][0]["name"]
-    track = d["name"]
-    print(artist, "-", track)
-    print()
-
-
 # Gets cover from track id
 
 def getSongImage(track_id):
-    getSong(track_id)
     r = requests.get(BASE_URL + "tracks/" + track_id, headers=headers)
     d = r.json()
 
@@ -215,36 +202,6 @@ def getSongImage(track_id):
     cv2.waitKey(0)"""
 
 
-# Gets all albums from artist | test function, could be removed?
-
-def getArtistsAlbums(artist_id):
-
-    r = requests.get(BASE_URL + "artists/" + artist_id,
-                     headers=headers)
-    a = r.json()
-
-    print("--- All Albums by the Artist '" + a["name"] + "' ---")
-
-    r = requests.get(BASE_URL + "artists/" + artist_id + "/albums",
-                     headers=headers,
-                     params={"include_groups": "album", "limit": 50})
-    d = r.json()
-
-    albums = []
-    for album in d["items"]:
-        album_name = album["name"]
-
-        trim_name = album_name.split('(')[0].strip()  # Filter out duplicates
-        if trim_name.upper() in albums:
-            continue
-
-        albums.append(trim_name.upper())
-
-        print(album_name, "---", album["release_date"])
-
-    print()
-
-
 # Loop that checks if the song has changed
 
 def updateCurrentSong():
@@ -255,7 +212,7 @@ def updateCurrentSong():
         song_id = song_info["id"]
         clear_console()
         print("--- Now Playing ---")
-        getSong(song_id)
+        getArtistAndNameOfCurSong()
         return True
     return False
         
@@ -379,9 +336,9 @@ def create_environment():
 
 if (__name__ == "__main__"):
     # clear()
-    # clear_environment() 
-    # create_environment()
-    # generate_collection()
+    clear_environment() 
+    create_environment()
+    generate_collection()
     # requestAuthorization()
     # getAccessToken()
     # getSong("3I2Jrz7wTJTVZ9fZ6V3rQx")
@@ -396,4 +353,4 @@ if (__name__ == "__main__"):
     # getCoverOfCurrentSong()
     # getCurrentlyPlayedSong()
     # updateCurrentSong()
-    # bpy.app.timers.register(run_every_n_second)
+    bpy.app.timers.register(run_every_n_second)
