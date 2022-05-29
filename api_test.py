@@ -14,7 +14,7 @@ REDIRECT_URL = "http://127.0.0.1:5555/callback.html"
 
 # DO NOT PUSH WHEN USER_CODE AND access_token_user IS NOT ""!!!
 user_code = ""
-access_token_user = ""
+access_token_user = "BQCXG7EaX2gQFx9R2MEdIjNxQxnfITbUcdk0MoQK9AbhjQZRQsQUWvfiF_4F5CbIl559XYGmp6lcCnWDk_dHKQsSZYl4p0cxzfNErYhIKFukJGC7poFz5aXkSryy_MiBDaTPlyG0lhcKIuT1tu9lRiFWVR8UcSPxr-FYxiucnm1x8Q"
 
 AUTH_URL = "https://accounts.spotify.com/api/token"
 CLIENT_AUTH_URL = "https://accounts.spotify.com/authorize"
@@ -79,8 +79,41 @@ def getAccessToken():
     access_token_user = r.json().get("access_token")
     print(access_token_user)
 
-# Returns an object containing information about the currently played song
+# Gets playback state of current device, if true, something is playing
 
+def getCurPlaybackState():
+    curPlayingUrl = BASE_URL + "me/player"
+    header = {
+        'Authorization': f'Bearer {access_token_user}'.format(token=access_token)
+    }
+    r = requests.get(url=curPlayingUrl, headers=header)
+    respJson = r.json()
+
+    return respJson["is_playing"]
+
+# Returns the milliseconds that have passed since the song began
+
+def getMsIntoCurSong(): 
+    curPlayingUrl = BASE_URL + "me/player"
+    header = {
+        'Authorization': f'Bearer {access_token_user}'.format(token=access_token)
+    }
+    r = requests.get(url=curPlayingUrl, headers=header)
+    respJson = r.json()
+
+    return respJson["progress_ms"]
+
+
+# Returns the percentage of how much the song is over
+
+def getProgressIntoCurSong(): 
+
+    max_length = getCurrentlyPlayedSong()["duration"]
+    cur_position = getMsIntoCurSong()
+    return((cur_position / max_length) * 100)
+
+
+# Returns an object containing information about the currently played song
 
 def getCurrentlyPlayedSong():
     curPlayingUrl = BASE_URL + "me/player/currently-playing"
@@ -90,23 +123,59 @@ def getCurrentlyPlayedSong():
     r = requests.get(url=curPlayingUrl, headers=header)
     respJson = r.json()
 
-
     track_id = respJson["item"]["id"]
     track_name = respJson["item"]["name"]
     artists = respJson["item"]["artists"]
     artists_names = ", ".join([artist["name"] for artist in artists])
+    duration = respJson["item"]["duration_ms"]
     link = respJson["item"]["external_urls"]["spotify"]
 
     currentTrackInfo = {
         "id": track_id,
         "name": track_name,
         "artists": artists_names,
+        "duration": duration,
         "link": link
     }
     return currentTrackInfo
 
-# Gets cover of current song
+# Gets artist and name of current song in this format:
+# "artist, artist2 - song"
 
+def getArtistAndNameOfCurSong(): 
+    currentTrackInfo = getCurrentlyPlayedSong()
+    return currentTrackInfo["artists"] + " - " + currentTrackInfo["name"]
+
+# Gets the artist image of the current song
+
+def getArtistImage(track_id):
+    track_req = requests.get(BASE_URL + "tracks/" + track_id, headers=headers)
+    track_data = track_req.json()
+    artist_id  = track_data["artists"][0]["id"]
+
+    artist_req = requests.get(BASE_URL + "artists/" + artist_id, headers=headers)
+    artist_data = artist_req.json()
+    image = requests.get(artist_data["images"][0])
+    img_string = np.frombuffer(image.content, np.uint8)
+    img = cv2.imdecode(img_string, cv2.IMREAD_UNCHANGED)
+    return img
+
+# Gets the users profile image
+
+def getLinkToCurUserImage():
+    userUrl = BASE_URL + "me"
+    header = {
+        'Authorization': f'Bearer {access_token_user}'.format(token=access_token)
+    }
+    r = requests.get(url=userUrl, headers=header)
+    respJson = r.json()
+    image = requests.get(respJson["images"][0]["url"])
+    img_string = np.frombuffer(image.content, np.uint8)
+    img = cv2.imdecode(img_string, cv2.IMREAD_UNCHANGED)
+    return img
+
+
+# Gets cover of current song
 
 def getCoverOfCurrentSong():
     currentTrackId = getCurrentlyPlayedSong()["id"]
@@ -202,7 +271,7 @@ def delete_current_cover():
         bpy.ops.object.delete()
 # Creates cover from image retrieved in getSongImage()
 
-def generade_collection(): 
+def generate_collection(): 
     collection = bpy.data.collections.new("Leuchtbilder")
     bpy.context.scene.collection.children["Leuchtbildtafel"].children.link(
         collection)
@@ -310,15 +379,21 @@ def create_environment():
 
 if (__name__ == "__main__"):
     # clear()
-    clear_environment() 
-    create_environment()
-    generade_collection()
+    # clear_environment() 
+    # create_environment()
+    # generate_collection()
     # requestAuthorization()
     # getAccessToken()
     # getSong("3I2Jrz7wTJTVZ9fZ6V3rQx")
     # getArtistsAlbums("26T3LtbuGT1Fu9m0eRq5X3")
     # getSongImage("3I2Jrz7wTJTVZ9fZ6V3rQx")
+    # getArtistAndNameOfCurSong()
+    # getArtistImage("50lTDu2BnjyqWnUFsxMryJ")
+    # getLinkToCurUserImage()
+    # getCurPlaybackState()
+    # getMsIntoCurSong()
+    # getProgressIntoCurSong()
     # getCoverOfCurrentSong()
     # getCurrentlyPlayedSong()
     # updateCurrentSong()
-    bpy.app.timers.register(run_every_n_second)
+    # bpy.app.timers.register(run_every_n_second)
