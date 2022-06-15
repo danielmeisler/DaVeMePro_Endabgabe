@@ -1,5 +1,7 @@
 
 from cmath import pi
+import json
+import math
 import requests
 import os
 import cv2
@@ -14,7 +16,7 @@ REDIRECT_URL = "http://127.0.0.1:5555/callback.html"
 
 # DO NOT PUSH WHEN USER_CODE AND access_token_user IS NOT ""!!!
 user_code = ""
-access_token_user = ""
+access_token_user = "BQA6InV-Z4thELVdPD-HKBs9proUH59tb4w0xsjgP4EuGWkmhMNEX9Coiz-O1pN-hOK-v450JuuXO_t0P35knuUkwEVnuEC9nJUoqWKogWfqjZnc9BWtxX05cseF312_ej3Pf0yPE-bNNoZKLIAa8Xtr2RA0EA0co0E7fidz6eLDoyJYqHxnhKLxI7gDJDGsCiLO4rYhJA"
 
 AUTH_URL = "https://accounts.spotify.com/api/token"
 CLIENT_AUTH_URL = "https://accounts.spotify.com/authorize"
@@ -333,12 +335,37 @@ def create_environment():
     for i in range(3):
         bpy.data.objects["skyscraper"].scale[i] = skyscraper_scale """
 
+def sun_animation():
+    sun_start_x = 27
+    sun_end_x = -27
+    sun: bpy.types.Object = bpy.data.objects["sun"]
+
+    for a in bpy.data.actions:
+        bpy.data.actions.remove(a)
+
+    # first keyframe
+    sun.location[0] = sun_start_x
+    sun.keyframe_insert(data_path="location", frame=0)
+
+    # get duration
+    songdata = getCurrentlyPlayedSong()
+    seconds = songdata["duration"]/1000
+    last_frame = math.floor(seconds*30)
+
+    # set last scene frame
+    bpy.data.scenes["Scene"].frame_end = last_frame
+
+    # end keyframe
+    sun.location[0] = sun_end_x
+    sun.keyframe_insert(data_path="location", frame=last_frame)
+
 
 if (__name__ == "__main__"):
     # clear()
     clear_environment() 
     create_environment()
     generate_collection()
+    sun_animation()
     # requestAuthorization()
     # getAccessToken()
     # getSong("3I2Jrz7wTJTVZ9fZ6V3rQx")
@@ -351,6 +378,6 @@ if (__name__ == "__main__"):
     # getMsIntoCurSong()
     # getProgressIntoCurSong()
     # getCoverOfCurrentSong()
-    # getCurrentlyPlayedSong()
+    getCurrentlyPlayedSong()
     # updateCurrentSong()
     bpy.app.timers.register(run_every_n_second)
