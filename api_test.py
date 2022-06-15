@@ -16,7 +16,7 @@ REDIRECT_URL = "http://127.0.0.1:5555/callback.html"
 
 # DO NOT PUSH WHEN USER_CODE AND access_token_user IS NOT ""!!!
 user_code = ""
-access_token_user = "BQA6InV-Z4thELVdPD-HKBs9proUH59tb4w0xsjgP4EuGWkmhMNEX9Coiz-O1pN-hOK-v450JuuXO_t0P35knuUkwEVnuEC9nJUoqWKogWfqjZnc9BWtxX05cseF312_ej3Pf0yPE-bNNoZKLIAa8Xtr2RA0EA0co0E7fidz6eLDoyJYqHxnhKLxI7gDJDGsCiLO4rYhJA"
+access_token_user = ""
 
 AUTH_URL = "https://accounts.spotify.com/api/token"
 CLIENT_AUTH_URL = "https://accounts.spotify.com/authorize"
