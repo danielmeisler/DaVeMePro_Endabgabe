@@ -16,7 +16,7 @@ REDIRECT_URL = "http://127.0.0.1:5555/callback.html"
 
 # DO NOT PUSH WHEN USER_CODE AND access_token_user IS NOT ""!!!
 user_code = ""
-access_token_user = "BQDkWs5eVy2MwGUoo8k6OIZd6Ix6oWhcTqLpmucvTUpRNTVjsrajvtkslDhGCwxvDFnmA8yGifnDSNcxEfFhl4tYbYFs-2c2KQJBhSZEzUPrCRP8jF5Ras_jnMtlHGDeVzT-fYVwjcpfyIGuQ3zY9Jbn4I0msYFV7wwefAbdX3Rhcj0KbH3rmwGjj_73J5Fb7HGFj3uTrrxxkw0"
+access_token_user = ""
 
 AUTH_URL = "https://accounts.spotify.com/api/token"
 CLIENT_AUTH_URL = "https://accounts.spotify.com/authorize"
@@ -321,6 +321,9 @@ def run_every_n_second():
         update_cover()
         animation_handler()
 
+    #update sun position
+    set_sun_to_curr_frame()
+
     #counter += 1
     return WAIT_TIME   
 
@@ -346,9 +349,7 @@ def animation_handler():
     world_background_animation(last_frame)
 
     # set current frame
-    #ms = getMsIntoCurSong()
-    #print(ms)
-    bpy.data.scenes["Scene"].frame_current = math.floor((getMsIntoCurSong()/1000)*30)
+    set_sun_to_curr_frame()
 
 def sun_animation(last_frame):
     # variables
@@ -396,6 +397,9 @@ def world_background_animation(last_frame):
 
     world_background.default_value = world_bg_bright
     world_background.keyframe_insert(data_path="default_value", frame=math.floor(last_frame/2))
+
+def set_sun_to_curr_frame():
+    bpy.data.scenes["Scene"].frame_current = math.floor((getMsIntoCurSong()/1000)*30)
 
 if (__name__ == "__main__"):
     # clear()
