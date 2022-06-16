@@ -2,6 +2,8 @@
 from cmath import pi
 import json
 import math
+from tracemalloc import start
+from typing import Any
 import requests
 import os
 import cv2
@@ -16,7 +18,7 @@ REDIRECT_URL = "http://127.0.0.1:5555/callback.html"
 
 # DO NOT PUSH WHEN USER_CODE AND access_token_user IS NOT ""!!!
 user_code = ""
-access_token_user = ""
+access_token_user = "BQDkWs5eVy2MwGUoo8k6OIZd6Ix6oWhcTqLpmucvTUpRNTVjsrajvtkslDhGCwxvDFnmA8yGifnDSNcxEfFhl4tYbYFs-2c2KQJBhSZEzUPrCRP8jF5Ras_jnMtlHGDeVzT-fYVwjcpfyIGuQ3zY9Jbn4I0msYFV7wwefAbdX3Rhcj0KbH3rmwGjj_73J5Fb7HGFj3uTrrxxkw0"
 
 AUTH_URL = "https://accounts.spotify.com/api/token"
 CLIENT_AUTH_URL = "https://accounts.spotify.com/authorize"
@@ -347,6 +349,7 @@ def animation_handler():
     # set keyframes
     sun_animation(last_frame)
     world_background_animation(last_frame)
+    train_animation(last_frame)
 
     # set current frame
     set_sun_to_curr_frame()
@@ -397,6 +400,21 @@ def world_background_animation(last_frame):
 
     world_background.default_value = world_bg_bright
     world_background.keyframe_insert(data_path="default_value", frame=math.floor(last_frame/2))
+
+def train_animation(last_frame):
+    train_start_x = 8
+    train_end_x = -10
+    start_frame = math.floor(last_frame/2)
+    end_frame = math.floor(last_frame/2 + last_frame/10)
+
+    # get train obj
+    train: bpy.types.Object = bpy.data.objects["Straßenbahn"]
+
+    train.location[0] = train_start_x
+    train.keyframe_insert(data_path="location", frame=start_frame)
+
+    train.location[0] = train_end_x
+    train.keyframe_insert(data_path="location", frame=end_frame)
 
 def set_sun_to_curr_frame():
     bpy.data.scenes["Scene"].frame_current = math.floor((getMsIntoCurSong()/1000)*30)
