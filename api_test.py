@@ -16,7 +16,7 @@ REDIRECT_URL = "http://127.0.0.1:5555/callback.html"
 
 # DO NOT PUSH WHEN USER_CODE AND access_token_user IS NOT ""!!!
 user_code = ""
-access_token_user = ""
+access_token_user = "BQDkWs5eVy2MwGUoo8k6OIZd6Ix6oWhcTqLpmucvTUpRNTVjsrajvtkslDhGCwxvDFnmA8yGifnDSNcxEfFhl4tYbYFs-2c2KQJBhSZEzUPrCRP8jF5Ras_jnMtlHGDeVzT-fYVwjcpfyIGuQ3zY9Jbn4I0msYFV7wwefAbdX3Rhcj0KbH3rmwGjj_73J5Fb7HGFj3uTrrxxkw0"
 
 AUTH_URL = "https://accounts.spotify.com/api/token"
 CLIENT_AUTH_URL = "https://accounts.spotify.com/authorize"
@@ -102,7 +102,6 @@ def getMsIntoCurSong():
     }
     r = requests.get(url=curPlayingUrl, headers=header)
     respJson = r.json()
-
     return respJson["progress_ms"]
 
 
@@ -320,6 +319,8 @@ def run_every_n_second():
     is_new_song = updateCurrentSong()
     if is_new_song: 
         update_cover()
+        animation_handler()
+
     #counter += 1
     return WAIT_TIME   
 
@@ -328,44 +329,80 @@ def run_every_n_second():
 
 def create_environment():
     bpy.ops.wm.open_mainfile(filepath="DAVT_Project_Scene.blend")
-    """ skyscraper_degree = 90
-    skyscraper_scale = 6
-    bpy.data.objects["skyscraper"].rotation_euler[2] = skyscraper_degree * pi / 180
-    bpy.data.objects["skyscraper"].location[2] *= skyscraper_scale
-    for i in range(3):
-        bpy.data.objects["skyscraper"].scale[i] = skyscraper_scale """
 
-def sun_animation():
-    sun_start_x = 27
-    sun_end_x = -27
-    sun: bpy.types.Object = bpy.data.objects["sun"]
+def animation_handler():
 
+    # delete old keyframes / animation
     for a in bpy.data.actions:
         bpy.data.actions.remove(a)
 
-    # first keyframe
-    sun.location[0] = sun_start_x
-    sun.keyframe_insert(data_path="location", frame=0)
-
-    # get duration
+    # get duration of playing song
     songdata = getCurrentlyPlayedSong()
     seconds = songdata["duration"]/1000
     last_frame = math.floor(seconds*30)
 
-    # set last scene frame
+    # set keyframes
+    sun_animation(last_frame)
+    world_background_animation(last_frame)
+
+    # set current frame
+    #ms = getMsIntoCurSong()
+    #print(ms)
+    bpy.data.scenes["Scene"].frame_current = math.floor((getMsIntoCurSong()/1000)*30)
+
+def sun_animation(last_frame):
+    # variables
+    sun_start_x = 27
+    sun_z = 14.5
+    sun_end_x = -27
+    sun_start_rot = 0.959931
+    sun_end_rot = -0.959931
+    sun_start_color = (sun_start_x, 0, sun_z) 
+    start_end_color = (sun_end_x, 0, sun_z)
+
+    # get sun obj
+    sun: bpy.types.Object = bpy.data.objects["sun"]
+    sun_spot: bpy.data.lights = bpy.data.lights["Spot"]
+
+    # set animation length
     bpy.data.scenes["Scene"].frame_end = last_frame
 
-    # end keyframe
-    sun.location[0] = sun_end_x
-    sun.keyframe_insert(data_path="location", frame=last_frame)
+    # set keyframes for location and rotation of the sun
+    # set first keyframe
+    sun.location = sun_start_color
+    sun.rotation_euler[1] = sun_start_rot
+    sun_spot.color = (0.743, 0.785, 1)
+    sun.keyframe_insert(data_path="location", frame=0)
+    sun.keyframe_insert(data_path="rotation_euler", frame=0)
+    sun_spot.keyframe_insert(data_path="color", frame=0)
 
+    # set last keyframe 
+    sun.location = start_end_color
+    sun.rotation_euler[1] = sun_end_rot
+    sun_spot.color = (1, 0.746, 0.722)
+    sun.keyframe_insert(data_path="location", frame=last_frame)
+    sun.keyframe_insert(data_path="rotation_euler", frame=last_frame)
+    sun_spot.keyframe_insert(data_path="color", frame=last_frame)
+
+def world_background_animation(last_frame):
+    world_bg_dark = (0.013,0.016,0.024,1)
+    world_bg_bright = (0.085, 0.097,0.138, 1)
+
+    world_background = bpy.data.worlds["World"].node_tree.nodes["Background"].inputs[0]
+
+    world_background.default_value = world_bg_dark
+    world_background.keyframe_insert(data_path="default_value", frame=0)
+    world_background.keyframe_insert(data_path="default_value", frame=last_frame)
+
+    world_background.default_value = world_bg_bright
+    world_background.keyframe_insert(data_path="default_value", frame=math.floor(last_frame/2))
 
 if (__name__ == "__main__"):
     # clear()
     clear_environment() 
     create_environment()
     generate_collection()
-    sun_animation()
+    animation_handler()
     # requestAuthorization()
     # getAccessToken()
     # getSong("3I2Jrz7wTJTVZ9fZ6V3rQx")
