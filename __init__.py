@@ -33,7 +33,9 @@ CLIENT_SECRET = "ba05f9e81dbc4443857aa9f3afcfc88b"
 REDIRECT_URL = "http://127.0.0.1:5555/callback.html"
 
 # DO NOT PUSH WHEN USER_CODE AND access_token_user IS NOT ""!!!
+global user_code
 user_code = ""
+global access_token_user
 access_token_user = ""
 
 AUTH_URL = "https://accounts.spotify.com/api/token"
@@ -61,20 +63,41 @@ headers = {
 
 links = {"Spotify" : 'https://developer.spotify.com/console/get-users-currently-playing-track/?market=&additional_types=',}
 
-class test_panel(bpy.types.Panel):
+class MyProperties(bpy.types.PropertyGroup):
+    bl_idname = "MyProperties"
+        
+    spotify_user_token: bpy.props.StringProperty(
+        name="Token",
+        description="You need to generate a Spotify-Acces-Token and put it here to get acces to the data.",
+        default="",
+    )
+    
+    train_speed: bpy.props.FloatProperty(name= "Train Speed", soft_min= 20, soft_max= 50, default= 1)
+
+    aktualsierung: bpy.props.FloatProperty(name= "Timer", soft_min= 1, soft_max= 10, default= 1)
+    
+
+class Spotify_Panel(bpy.types.Panel):
     """Creates a Panel in the scene context of the properties editor"""
     bl_label = "Spotify Addon"
-    bl_idname = "SCENE_PT_layout"
-    bl_space_type = 'PROPERTIES'
-    bl_region_type = 'WINDOW'
-    bl_context = "scene"
+    bl_idname = "Spotify_Panel"
+    bl_space_type = 'VIEW_3D'
+    bl_region_type = 'UI'
+    bl_category = "Spotify Addon"
 
     def draw(self, context):
-        token_url = self.layout.operator('wm.url_open', text="get spotify token", icon="URL")
-        token_url.url = links["Spotify"]
-        #testbla = bpy.props.StringProperty(name= "enter token", default= "")
-        #self.layout.prop(context.scene, "testbla")
+        layout = self.layout
+        scene = context.scene
+        mytool = scene.my_tool
 
+        token_url = layout.operator('wm.url_open', text="get spotify token", icon="URL")
+        token_url.url = links["Spotify"]
+        
+        layout.prop(mytool, "spotify_user_token")
+        layout.prop(mytool, "train_speed")
+        layout.prop(mytool, "aktualsierung")
+
+        access_token_user = mytool.spotify_user_token
 
 class Songcover():
     def __init__(self):
@@ -316,12 +339,18 @@ class Autostart(bpy.types.Operator):
 
 def register():
     bpy.utils.register_class(Autostart)
-    bpy.utils.register_class(test_panel)
-
+    bpy.utils.register_class(MyProperties)
+    bpy.utils.register_class(Spotify_Panel)
+    bpy.types.Scene.my_tool = bpy.props.PointerProperty(type= MyProperties)
+    bpy.utils.register_class(Spotify_Operator)
 
 def unregister():
     bpy.utils.unregister_class(Autostart)
-    bpy.utils.unregister_class(test_panel)
+    bpy.utils.unregister_class(MyProperties)
+    bpy.utils.unregister_class(Spotify_Panel)
+    del bpy.types.Scene.my_tool
+    bpy.utils.unregister_class(Spotify_Operator)
+
 
 if __name__ == "__main__":
     register()
