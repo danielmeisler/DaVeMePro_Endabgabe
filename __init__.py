@@ -1,7 +1,6 @@
 from cgi import test
 from cmath import pi
 from nturl2path import url2pathname
-import time
 from unicodedata import name
 import requests
 import os
@@ -35,7 +34,7 @@ REDIRECT_URL = "http://127.0.0.1:5555/callback.html"
 # DO NOT PUSH WHEN USER_CODE AND access_token_user IS NOT ""!!!
 global user_code
 user_code = ""
-global access_token_user
+
 access_token_user = ""
 
 AUTH_URL = "https://accounts.spotify.com/api/token"
@@ -97,7 +96,7 @@ class Spotify_Panel(bpy.types.Panel):
         layout.prop(mytool, "train_speed")
         layout.prop(mytool, "aktualsierung")
 
-        access_token_user = mytool.spotify_user_token
+        self.access_token_user = mytool.spotify_user_token
 
 class Songcover():
     def __init__(self):
@@ -146,6 +145,7 @@ class Songcover():
         print(access_token_user)
 
     def getCurrentlyPlayedSong():
+        
         curPlayingUrl = BASE_URL + "me/player/currently-playing"
         header = {
             'Authorization': f'Bearer {access_token_user}'.format(token=access_token)
