@@ -18,7 +18,7 @@ REDIRECT_URL = "http://127.0.0.1:5555/callback.html"
 
 # DO NOT PUSH WHEN USER_CODE AND access_token_user IS NOT ""!!!
 user_code = ""
-access_token_user = ""
+access_token_user = "BQBuf4xhthYiaSIox13eLX3HLH5mkbXXHH1HzJliIUInwK62rLeDzY1oeDtHVbrQA668PFkNoaFoIe2td3mv37Wq8K3leS-54QynewRIbirzlEfKGD15RgWcO029hMqOyr9B_-vyUjsUSJY3Y_GQ7iaFo1IS2326z1dkFG1rd39pS4kjFiJkmrZgF6D_KuEzoUBb6dwsHVTGM22geQ"
 
 AUTH_URL = "https://accounts.spotify.com/api/token"
 CLIENT_AUTH_URL = "https://accounts.spotify.com/authorize"
@@ -311,8 +311,6 @@ def clear_environment():
 def clear_console():
     os.system('cls')
    
-
-
 def run_every_n_second():
     global WAIT_TIME
     global counter
@@ -341,18 +339,24 @@ def animation_handler():
     for a in bpy.data.actions:
         bpy.data.actions.remove(a)
 
+    # set/get frame rate
+    frame_rate = 30
+
     # get duration of playing song
     songdata = getCurrentlyPlayedSong()
     seconds = songdata["duration"]/1000
-    last_frame = math.floor(seconds*30)
+    last_frame = math.floor(seconds*frame_rate)
 
     # set keyframes
     sun_animation(last_frame)
     world_background_animation(last_frame)
-    train_animation(last_frame)
+    train_animation(last_frame, frame_rate)
 
     # set current frame
     set_sun_to_curr_frame()
+
+    # start animation
+    #bpy.ops.screen.animation_play()
 
 def sun_animation(last_frame):
     # variables
@@ -401,11 +405,13 @@ def world_background_animation(last_frame):
     world_background.default_value = world_bg_bright
     world_background.keyframe_insert(data_path="default_value", frame=math.floor(last_frame/2))
 
-def train_animation(last_frame):
+def train_animation(last_frame, frame_rate):
     train_start_x = 8
     train_end_x = -10
-    start_frame = math.floor(last_frame/2)
-    end_frame = math.floor(last_frame/2 + last_frame/10)
+    start_frame = math.floor(last_frame/4)
+    train_speed = 50 #20 
+    train_duration = frame_rate * train_speed
+    #end_frame = math.floor(last_frame/2 + last_frame/10)
 
     # get train obj
     train: bpy.types.Object = bpy.data.objects["Straßenbahn"]
@@ -414,7 +420,7 @@ def train_animation(last_frame):
     train.keyframe_insert(data_path="location", frame=start_frame)
 
     train.location[0] = train_end_x
-    train.keyframe_insert(data_path="location", frame=end_frame)
+    train.keyframe_insert(data_path="location", frame=start_frame+train_duration)
 
 def set_sun_to_curr_frame():
     bpy.data.scenes["Scene"].frame_current = math.floor((getMsIntoCurSong()/1000)*30)
