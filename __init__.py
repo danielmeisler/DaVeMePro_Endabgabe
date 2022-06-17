@@ -342,14 +342,12 @@ def register():
     bpy.utils.register_class(MyProperties)
     bpy.utils.register_class(Spotify_Panel)
     bpy.types.Scene.my_tool = bpy.props.PointerProperty(type= MyProperties)
-    bpy.utils.register_class(Spotify_Operator)
 
 def unregister():
     bpy.utils.unregister_class(Autostart)
     bpy.utils.unregister_class(MyProperties)
     bpy.utils.unregister_class(Spotify_Panel)
     del bpy.types.Scene.my_tool
-    bpy.utils.unregister_class(Spotify_Operator)
 
 
 if __name__ == "__main__":
