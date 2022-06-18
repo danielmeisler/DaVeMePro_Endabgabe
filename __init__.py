@@ -506,9 +506,8 @@ class Songcover():
         train_start_x = 8
         train_end_x = -10
         start_frame = math.floor(last_frame/4)
-        train_speed = 50 #20 
+        train_speed = math.floor(bpy.data.scenes["Scene"].my_tool.train_speed) #50 #20 
         train_duration = frame_rate * train_speed
-        #end_frame = math.floor(last_frame/2 + last_frame/10)
 
         # get train obj
         train: bpy.types.Object = bpy.data.objects["Straßenbahn"]
