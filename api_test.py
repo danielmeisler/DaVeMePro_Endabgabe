@@ -15,7 +15,7 @@ REDIRECT_URL = "http://127.0.0.1:5555/callback.html"
 
 # DO NOT PUSH WHEN USER_CODE AND access_token_user IS NOT ""!!!
 user_code = ""
-access_token_user = "BQCKt5EK-kprD6frisQFMCxot-KOptPtGVJ9KyG9AUJUGDIIgxrf002-PCGlfe8twveTtSLAm_yW6TeXs0kDnvpAePjk2-Ph3wBZjiMDpvd-aHe0AQ8NrkqstVZNKvpgf0D0D6KMPNcW_XwZ9UoJMX_d1bUtJr7mbHSamgMdMiiWDP0RfYeuz9Z_gYaP2OaSpcxWm_nxn7kIcUhmnQ"
+access_token_user = "BQAd0h5usozuvT0yYM6DlEfS4lqTQ3L50oC-UUioWYwMua0p6ZSPajG6dddZFV7WxXYuGtU_js1Ub-EJedaJ-0eNlrm9KzKW-3A0oDXC7WU1RwE6COzcVMwT-HptTJltCJ2Vxx6FLuyLAMrHTVYkaxOhK5H0JeMJwRzFay_BVOSCcfdorxMlp9acdNOWDJwjGC8-kt-8tMbfdO_Www"
 
 AUTH_URL = "https://accounts.spotify.com/api/token"
 CLIENT_AUTH_URL = "https://accounts.spotify.com/authorize"
@@ -228,7 +228,7 @@ def update_cover():
     getCoverOfCurrentSong()
     titel = bpy.data.objects["Song Titel"]
     songdata = getCurrentlyPlayedSong()
-    titel.data.body = songdata["name"]
+    titel.data.body = songdata["name"][0:30]
     
 
 
@@ -253,7 +253,7 @@ def create_song_titel():
         "Straßenbahn"]
     bpy.context.view_layer.active_layer_collection = layer_collection """
     Titel_curve = bpy.data.curves.new(type="FONT", name="Font Curve")
-    Titel_curve.body = songdata["name"]
+    Titel_curve.body = songdata["name"][0:30]
     titel_obj = bpy.data.objects.new(
         name="Song Titel", object_data=Titel_curve)
     bpy.context.scene.collection.children["Straßenbahn"].objects.link(
@@ -292,7 +292,7 @@ def create_cover_material(cover_img):
     node_tree: bpy.types.NodeTree = mat.node_tree
 
     bsdf = mat.node_tree.nodes["Principled BSDF"]
-    bsdf.inputs[20].default_value = 4
+    bsdf.inputs[20].default_value = 1.5
     tex_image = node_tree.nodes.new('ShaderNodeTexImage')
 
     rgba = cv2.cvtColor(cover_img, cv2.COLOR_RGB2BGRA)
