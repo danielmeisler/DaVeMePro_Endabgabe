@@ -1,5 +1,6 @@
 from cgi import test
 from cmath import pi
+import math
 from nturl2path import url2pathname
 from unicodedata import name
 import requests
@@ -35,7 +36,7 @@ REDIRECT_URL = "http://127.0.0.1:5555/callback.html"
 global user_code
 user_code = ""
 
-access_token_user = ""
+access_token_user = "BQD7ilHdGFgsPTjSN4zCwOPJbaFS7ggKAl6yo29SlCZ0DabzJraTxVmZIu_ztRU2Q0p7y4V9I31Lw9xKBNX38syppyFUqVjP0qfPAsLYZ8HS6R-6HOnTkjLKwIaQX85jD3dSqzj1fzAhaypKQm2SsVNr6kfcteE7WUuT20EwLPc4KWAtwYKJvacmTHnrP8bX-cuIIvTQE23_pB-2mQ"
 
 AUTH_URL = "https://accounts.spotify.com/api/token"
 CLIENT_AUTH_URL = "https://accounts.spotify.com/authorize"
@@ -46,7 +47,9 @@ COVER_SIZE = 1.2  # size of the total cover
 COVER_POSITION = (-2.6819, 1.10, 3.34549)
 
 PIXEL_LEVEL = 0.01
+WAIT_TIME = 5.0
 
+song_id = ""
 # get access token
 auth_response = requests.post(AUTH_URL, {
     'grant_type': 'client_credentials',
@@ -100,29 +103,39 @@ class Spotify_Panel(bpy.types.Panel):
 
 class Songcover():
     def __init__(self):
-        print("Init")
-        Songcover.clear()
-        Songcover.createEnvironment()
+        # clear()
+        Songcover.clear_environment() 
+        Songcover.create_environment()
+        Songcover.generate_collection()
+        Songcover.animation_handler()
         # requestAuthorization()
         # getAccessToken()
         # getSong("3I2Jrz7wTJTVZ9fZ6V3rQx")
         # getArtistsAlbums("26T3LtbuGT1Fu9m0eRq5X3")
-        Songcover.getSongImage("3I2Jrz7wTJTVZ9fZ6V3rQx")
+        # getSongImage("3I2Jrz7wTJTVZ9fZ6V3rQx")
+        # getArtistAndNameOfCurSong()
+        # getArtistImage("50lTDu2BnjyqWnUFsxMryJ")
+        # getLinkToCurUserImage()
+        # getCurPlaybackState()
+        # getMsIntoCurSong()
+        # getProgressIntoCurSong()
         # getCoverOfCurrentSong()
-        # getCurrentlyPlayedSong()
+        Songcover.getCurrentlyPlayedSong()
         # updateCurrentSong()
+        bpy.app.timers.register(Songcover.run_every_n_second)
 
-        # Opens login screen -> After redirect, you can see the users code. (Live Server must be active!)
     def requestAuthorization():
         url = CLIENT_AUTH_URL
         url += "?client_id=" + CLIENT_ID
         url += "&response_type=code"
         url += "&redirect_uri=" + REDIRECT_URL
         url += "&show_dialog=true"
-        url += "&scope=user-read-private user-read-email user-modify-playback-state user-read-playback-position user-library-read streaming user-read-playback-state user-read-recently-played playlist-read-private"
+        url += "&scope=user-read-currently-playing user-read-playback-position user-read-playback-state"
         webbrowser.open(url, new=0, autoraise=True)
 
-    # Gets song from track id
+
+    # Gets the access token from the user code from the function above
+    # This code automatically gets stored in "access_token_user" and is needed for anything that has to do with user activity
 
     def getAccessToken():
         encoded = base64.b64encode(
@@ -144,6 +157,41 @@ class Songcover():
         access_token_user = r.json().get("access_token")
         print(access_token_user)
 
+    # Gets playback state of current device, if true, something is playing
+
+    def getCurPlaybackState():
+        curPlayingUrl = BASE_URL + "me/player"
+        header = {
+            'Authorization': f'Bearer {access_token_user}'.format(token=access_token)
+        }
+        r = requests.get(url=curPlayingUrl, headers=header)
+        respJson = r.json()
+
+        return respJson["is_playing"]
+
+    # Returns the milliseconds that have passed since the song began
+
+    def getMsIntoCurSong(): 
+        curPlayingUrl = BASE_URL + "me/player"
+        header = {
+            'Authorization': f'Bearer {access_token_user}'.format(token=access_token)
+        }
+        r = requests.get(url=curPlayingUrl, headers=header)
+        respJson = r.json()
+        return respJson["progress_ms"]
+
+
+    # Returns the percentage of how much the song is over
+
+    def getProgressIntoCurSong(): 
+
+        max_length = Songcover.getCurrentlyPlayedSong()["duration"]
+        cur_position = Songcover.getMsIntoCurSong()
+        return((cur_position / max_length) * 100)
+
+
+    # Returns an object containing information about the currently played song
+
     def getCurrentlyPlayedSong():
         
         curPlayingUrl = BASE_URL + "me/player/currently-playing"
@@ -151,41 +199,70 @@ class Songcover():
             'Authorization': f'Bearer {access_token_user}'.format(token=access_token)
         }
         r = requests.get(url=curPlayingUrl, headers=header)
-
         respJson = r.json()
 
         track_id = respJson["item"]["id"]
         track_name = respJson["item"]["name"]
         artists = respJson["item"]["artists"]
         artists_names = ", ".join([artist["name"] for artist in artists])
+        duration = respJson["item"]["duration_ms"]
         link = respJson["item"]["external_urls"]["spotify"]
 
         currentTrackInfo = {
             "id": track_id,
             "name": track_name,
             "artists": artists_names,
+            "duration": duration,
             "link": link
         }
         return currentTrackInfo
+
+    # Gets artist and name of current song in this format:
+    # "artist, artist2 - song"
+
+    def getArtistAndNameOfCurSong(): 
+        currentTrackInfo = Songcover.getCurrentlyPlayedSong()
+        return currentTrackInfo["artists"] + " - " + currentTrackInfo["name"]
+
+    # Gets the artist image of the current song
+
+    def getArtistImage(track_id):
+        track_req = requests.get(BASE_URL + "tracks/" + track_id, headers=headers)
+        track_data = track_req.json()
+        artist_id  = track_data["artists"][0]["id"]
+
+        artist_req = requests.get(BASE_URL + "artists/" + artist_id, headers=headers)
+        artist_data = artist_req.json()
+        image = requests.get(artist_data["images"][0])
+        img_string = np.frombuffer(image.content, np.uint8)
+        img = cv2.imdecode(img_string, cv2.IMREAD_UNCHANGED)
+        return img
+
+    # Gets the users profile image
+
+    def getLinkToCurUserImage():
+        userUrl = BASE_URL + "me"
+        header = {
+            'Authorization': f'Bearer {access_token_user}'.format(token=access_token)
+        }
+        r = requests.get(url=userUrl, headers=header)
+        respJson = r.json()
+        image = requests.get(respJson["images"][0]["url"])
+        img_string = np.frombuffer(image.content, np.uint8)
+        img = cv2.imdecode(img_string, cv2.IMREAD_UNCHANGED)
+        return img
+
+
+    # Gets cover of current song
 
     def getCoverOfCurrentSong():
         currentTrackId = Songcover.getCurrentlyPlayedSong()["id"]
         Songcover.getSongImage(currentTrackId)
 
-    def getSong(track_id):
-        r = requests.get(BASE_URL + "tracks/" + track_id, headers=headers)
-        d = r.json()
 
-        artist = d["artists"][0]["name"]
-        track = d["name"]
-        print(artist, "-", track)
-        print()
-
-    # Gets cover from song
-
+    # Gets cover from track id
 
     def getSongImage(track_id):
-        Songcover.getSong(track_id)
         r = requests.get(BASE_URL + "tracks/" + track_id, headers=headers)
         d = r.json()
 
@@ -193,9 +270,7 @@ class Songcover():
         cover_image = requests.get(d["album"]["images"][0]['url'])
         img_string = np.frombuffer(cover_image.content, np.uint8)
         img = cv2.imdecode(img_string, cv2.IMREAD_UNCHANGED)
-        """  with open("coverImage.png", 'wb') as f:
-            f.write(cover_image.content) """
-        Songcover.createCoverFromImage(img)
+        Songcover.create_cover_from_image(img)
 
         # Show pixeled cover image
         """resized = cv2.resize(img, (100, 100), interpolation=cv2.INTER_NEAREST)
@@ -204,69 +279,62 @@ class Songcover():
         cv2.imshow('img', resized)
         cv2.waitKey(0)"""
 
-    # Get image part end
 
-    # Gets all albums from artist
-
-
-    def getArtistsAlbums(artist_id):
-
-        r = requests.get(BASE_URL + "artists/" + artist_id,
-                        headers=headers)
-        a = r.json()
-
-        print("--- All Albums by the Artist '" + a["name"] + "' ---")
-
-        r = requests.get(BASE_URL + "artists/" + artist_id + "/albums",
-                        headers=headers,
-                        params={"include_groups": "album", "limit": 50})
-        d = r.json()
-
-        albums = []
-        for album in d["items"]:
-            album_name = album["name"]
-
-            trim_name = album_name.split('(')[0].strip()  # Filter out duplicates
-            if trim_name.upper() in albums:
-                continue
-
-            albums.append(trim_name.upper())
-
-            print(album_name, "---", album["release_date"])
-
-        print()
+    # Loop that checks if the song has changed
 
     def updateCurrentSong():
-        song_id = ""
-        while True:
-            song_info = Songcover.getCurrentlyPlayedSong()
-            if song_info["id"] != song_id:
-                song_id = song_info["id"]
-                Songcover.clear()
-                print("--- Now Playing ---")
-                Songcover.getSong(song_id)
-            Songcover.time.sleep(1)
+        global song_id 
+    
+        song_info = Songcover.getCurrentlyPlayedSong()
+        if song_info["id"] != song_id:
+            song_id = song_info["id"]
+            Songcover.clear_console()
+            print("--- Now Playing ---")
+            Songcover.getArtistAndNameOfCurSong()
+            return True
+        return False
+            
+    def update_cover(): 
+        Songcover.delete_current_cover()
+        Songcover.getCoverOfCurrentSong()
+        titel = bpy.data.objects["Song Titel"]
+        songdata = Songcover.getCurrentlyPlayedSong()
+        titel.data.body = songdata["name"]
 
-    def createCoverFromImage(img):
+    def delete_current_cover():
+        bpy.ops.object.select_all(action='DESELECT')
+        cover = bpy.context.scene.objects.get('cover')
+        if cover:
+            bpy.data.objects['cover'].select_set(True)
+            bpy.ops.object.delete()
+    # Creates cover from image retrieved in getSongImage()
+
+    def generate_collection(): 
+        collection = bpy.data.collections.new("Leuchtbilder")
+        bpy.context.scene.collection.children["Leuchtbildtafel"].children.link(
+            collection)
+
+    def create_cover_from_image(img):
         global COVER_SIZE
         global COVER_POSITION
 
-        collection = bpy.data.collections.new("Leuchtbilder")
-        bpy.context.scene.collection.children["Leuchtbildtafel"].children.link(collection)
+        
 
-        layer_collection = bpy.context.view_layer.layer_collection.children["Leuchtbildtafel"].children[collection.name]
+        layer_collection = bpy.context.view_layer.layer_collection.children[
+            "Leuchtbildtafel"].children["Leuchtbilder"]
         bpy.context.view_layer.active_layer_collection = layer_collection
-    
+
         bpy.ops.mesh.primitive_plane_add(
             size=COVER_SIZE, location=COVER_POSITION, rotation=(pi/2, 0, pi))
-    
+
         cover_object: bpy.types.Object = bpy.data.objects["Plane"]
-        
-        mat = Songcover.createCoverMaterial(img)
+
+        mat = Songcover.create_cover_material(img)
         cover_object.data.materials.append(mat)
         cover_object.name = "cover"
 
-    def createCoverMaterial(cover_img):
+
+    def create_cover_material(cover_img):
         global COVER_SIZE
         global PIXEL_LEVEL
         mat: bpy.types.Material = bpy.data.materials.new("mat_Cover")
@@ -306,12 +374,26 @@ class Songcover():
             bsdf.inputs['Emission'], tex_image.outputs['Color'])
         return mat
 
-    def createEnvironment():
-        bpy.ops.wm.open_mainfile(filepath="DAVT_Project_Scene.blend")
+    def create_song_titel():
+        songdata = Songcover.getCurrentlyPlayedSong()
+        """ layer_collection = bpy.context.view_layer.layer_collection.children[
+            "Straßenbahn"]
+        bpy.context.view_layer.active_layer_collection = layer_collection """
+        Titel_curve = bpy.data.curves.new(type="FONT", name="Font Curve")
+        Titel_curve.body = songdata["name"]
+        titel_obj = bpy.data.objects.new(
+            name="Song Titel", object_data=Titel_curve)
+        bpy.context.scene.collection.children["Straßenbahn"].objects.link(
+            titel_obj)
+        titel_obj.rotation_euler = (pi/2, 0, pi)
+        titel_obj.scale = (0.4, 0.4, 0.4)
+        tram = bpy.data.objects["Straßenbahn"]
+        titel_obj.parent = tram
+        titel_obj.location = (+4, +0.35, -0.78)
+        titel_obj.color = (0, 0, 0, 0)
 
     # Clears console
-    def clear():
-        os.system('cls')
+    def clear_environment(): 
         # Select all objects
         bpy.ops.object.select_all(action='SELECT')
         # Delete the selected Objects
@@ -321,6 +403,124 @@ class Songcover():
         # Delete materials
         for material in bpy.data.materials:
             bpy.data.materials.remove(material, do_unlink=True)
+
+    def clear_console():
+        os.system('cls')
+    
+    def run_every_n_second():
+        global WAIT_TIME
+        global counter
+        global TEST_SONG_COVERS
+    
+        is_new_song = Songcover.updateCurrentSong()
+        if is_new_song: 
+            Songcover.update_cover()
+            Songcover.animation_handler()
+
+        #update sun position
+        Songcover.set_sun_to_curr_frame()
+
+        #counter += 1
+        return WAIT_TIME   
+
+    # import assets for the environment
+
+
+    def create_environment():
+        bpy.ops.wm.open_mainfile(filepath="DAVT_Project_Scene.blend")
+        Songcover.create_song_titel()
+
+    def animation_handler():
+
+        # delete old keyframes / animation
+        for a in bpy.data.actions:
+            bpy.data.actions.remove(a)
+
+        # set/get frame rate
+        frame_rate = 30
+
+        # get duration of playing song
+        songdata = Songcover.getCurrentlyPlayedSong()
+        seconds = songdata["duration"]/1000
+        last_frame = math.floor(seconds*frame_rate)
+
+        # set keyframes
+        Songcover.sun_animation(last_frame)
+        Songcover.world_background_animation(last_frame)
+        Songcover.train_animation(last_frame, frame_rate)
+
+        # set current frame
+        Songcover.set_sun_to_curr_frame()
+
+        # start animation
+        #bpy.ops.screen.animation_play()
+
+    def sun_animation(last_frame):
+        # variables
+        sun_start_x = 27
+        sun_z = 14.5
+        sun_end_x = -27
+        sun_start_rot = 0.959931
+        sun_end_rot = -0.959931
+        sun_start_color = (sun_start_x, 0, sun_z) 
+        start_end_color = (sun_end_x, 0, sun_z)
+
+        # get sun obj
+        sun: bpy.types.Object = bpy.data.objects["sun"]
+        sun_spot: bpy.data.lights = bpy.data.lights["Spot"]
+
+        # set animation length
+        bpy.data.scenes["Scene"].frame_end = last_frame
+
+        # set keyframes for location and rotation of the sun
+        # set first keyframe
+        sun.location = sun_start_color
+        sun.rotation_euler[1] = sun_start_rot
+        sun_spot.color = (0.743, 0.785, 1)
+        sun.keyframe_insert(data_path="location", frame=0)
+        sun.keyframe_insert(data_path="rotation_euler", frame=0)
+        sun_spot.keyframe_insert(data_path="color", frame=0)
+
+        # set last keyframe 
+        sun.location = start_end_color
+        sun.rotation_euler[1] = sun_end_rot
+        sun_spot.color = (1, 0.746, 0.722)
+        sun.keyframe_insert(data_path="location", frame=last_frame)
+        sun.keyframe_insert(data_path="rotation_euler", frame=last_frame)
+        sun_spot.keyframe_insert(data_path="color", frame=last_frame)
+
+    def world_background_animation(last_frame):
+        world_bg_dark = (0.013,0.016,0.024,1)
+        world_bg_bright = (0.085, 0.097,0.138, 1)
+
+        world_background = bpy.data.worlds["World"].node_tree.nodes["Background"].inputs[0]
+
+        world_background.default_value = world_bg_dark
+        world_background.keyframe_insert(data_path="default_value", frame=0)
+        world_background.keyframe_insert(data_path="default_value", frame=last_frame)
+
+        world_background.default_value = world_bg_bright
+        world_background.keyframe_insert(data_path="default_value", frame=math.floor(last_frame/2))
+
+    def train_animation(last_frame, frame_rate):
+        train_start_x = 8
+        train_end_x = -10
+        start_frame = math.floor(last_frame/4)
+        train_speed = 50 #20 
+        train_duration = frame_rate * train_speed
+        #end_frame = math.floor(last_frame/2 + last_frame/10)
+
+        # get train obj
+        train: bpy.types.Object = bpy.data.objects["Straßenbahn"]
+
+        train.location[0] = train_start_x
+        train.keyframe_insert(data_path="location", frame=start_frame)
+
+        train.location[0] = train_end_x
+        train.keyframe_insert(data_path="location", frame=start_frame+train_duration)
+
+    def set_sun_to_curr_frame():
+        bpy.data.scenes["Scene"].frame_current = math.floor((Songcover.getMsIntoCurSong()/1000)*30)
 
 
 class Autostart(bpy.types.Operator):
