@@ -36,7 +36,7 @@ REDIRECT_URL = "http://127.0.0.1:5555/callback.html"
 global user_code
 user_code = ""
 
-access_token_user = "BQD7ilHdGFgsPTjSN4zCwOPJbaFS7ggKAl6yo29SlCZ0DabzJraTxVmZIu_ztRU2Q0p7y4V9I31Lw9xKBNX38syppyFUqVjP0qfPAsLYZ8HS6R-6HOnTkjLKwIaQX85jD3dSqzj1fzAhaypKQm2SsVNr6kfcteE7WUuT20EwLPc4KWAtwYKJvacmTHnrP8bX-cuIIvTQE23_pB-2mQ"
+access_token_user = ""
 
 AUTH_URL = "https://accounts.spotify.com/api/token"
 CLIENT_AUTH_URL = "https://accounts.spotify.com/authorize"
@@ -506,7 +506,10 @@ class Songcover():
         train_start_x = 8
         train_end_x = -10
         start_frame = math.floor(last_frame/4)
-        train_speed = math.floor(bpy.data.scenes["Scene"].my_tool.train_speed) #50 #20 
+        train_speed = math.floor(bpy.data.scenes["Scene"].my_tool.train_speed) #min. 20 - max. 50 
+        if train_speed < 20:
+            train_speed = 20
+        
         train_duration = frame_rate * train_speed
 
         # get train obj
