@@ -36,7 +36,7 @@ REDIRECT_URL = "http://127.0.0.1:5555/callback.html"
 global user_code
 user_code = ""
 
-access_token_user = ""
+access_token_user = "BQDEgKkXgQgNRIL8GoLimJjz8Zo0qrlZgTM7eY5Ia-MEBIVw4neSg6qsEA6cwmmwjbBdIgL25-VISReP3jRpiX8GACWtG-0NNvow8NhRtIBDZM00amzMZHfDY6lWId60FNfWFBDaKJlLjj9sqrbrnNp3w-9j6ONAgXUcf3E9BUTdmXN7k7Plxv6mCVLZoKlfiDr4Uu-JBNXh4Mhh"
 
 AUTH_URL = "https://accounts.spotify.com/api/token"
 CLIENT_AUTH_URL = "https://accounts.spotify.com/authorize"
@@ -310,9 +310,10 @@ class Songcover():
     # Creates cover from image retrieved in getSongImage()
 
     def generate_collection(): 
-        collection = bpy.data.collections.new("Leuchtbilder")
-        bpy.context.scene.collection.children["Leuchtbildtafel"].children.link(
-            collection)
+        #collection = bpy.data.collections.new("Leuchtbilder")
+        """ bpy.context.scene.collection.children["Leuchtbildtafel"].children.link(
+            collection) """
+        #bpy.context.scene.collection.objects.link(collection)
 
     def create_cover_from_image(img):
         global COVER_SIZE
@@ -320,9 +321,9 @@ class Songcover():
 
         
 
-        layer_collection = bpy.context.view_layer.layer_collection.children[
+        """ layer_collection = bpy.context.view_layer.layer_collection.children[
             "Leuchtbildtafel"].children["Leuchtbilder"]
-        bpy.context.view_layer.active_layer_collection = layer_collection
+        bpy.context.view_layer.active_layer_collection = layer_collection """
 
         bpy.ops.mesh.primitive_plane_add(
             size=COVER_SIZE, location=COVER_POSITION, rotation=(pi/2, 0, pi))
@@ -377,17 +378,18 @@ class Songcover():
     def create_song_titel():
         songdata = Songcover.getCurrentlyPlayedSong()
         """ layer_collection = bpy.context.view_layer.layer_collection.children[
-            "Straßenbahn"]
+            "Strassenbahn"]
         bpy.context.view_layer.active_layer_collection = layer_collection """
         Titel_curve = bpy.data.curves.new(type="FONT", name="Font Curve")
         Titel_curve.body = songdata["name"]
         titel_obj = bpy.data.objects.new(
             name="Song Titel", object_data=Titel_curve)
-        bpy.context.scene.collection.children["Straßenbahn"].objects.link(
-            titel_obj)
+        """ bpy.context.scene.collection.children["Strassenbahn"].objects.link(
+            titel_obj) """
+        bpy.context.scene.collection.objects.link(titel_obj)
         titel_obj.rotation_euler = (pi/2, 0, pi)
         titel_obj.scale = (0.4, 0.4, 0.4)
-        tram = bpy.data.objects["Straßenbahn"]
+        tram = bpy.data.objects["Strassenbahn"]
         titel_obj.parent = tram
         titel_obj.location = (+4, +0.35, -0.78)
         titel_obj.color = (0, 0, 0, 0)
@@ -427,7 +429,21 @@ class Songcover():
 
 
     def create_environment():
-        bpy.ops.wm.open_mainfile(filepath="DAVT_Project_Scene.blend")
+        #bpy.ops.wm.open_mainfile(filepath="DAVT_Project_Scene.blend")
+        file_path = 'DAVT_Project_Scene.blend'
+        inner_path = 'Object'
+        #'Leuchtschild','Strassenbahn', 'Straßenbahn_Lampe',
+        object_names = {'Building1','Building 2','Building 3','Building 4','Building 5','Building 5_2','Building 6','Building 7','Building 8',
+                        'Bridge', 'City_Floor', 'Nature_Floor','Street_Light', 'Street_Light_2','Zaun','Roof_Lamp', 'Camera', 
+                        'DepthOfField_Point', 'sun', 'Halterung', 'Halterung_2', 'Straba_Light_Inside', 
+                        'Street_Light_Top', 'Point.001', 'Street_Light_Top2','Point.002'}
+       
+        for obj in object_names:
+            bpy.ops.wm.append(
+                filepath=os.path.join(file_path, inner_path, obj),
+                directory=os.path.join(file_path, inner_path),
+                filename=obj)
+
         Songcover.create_song_titel()
 
     def animation_handler():
@@ -453,7 +469,7 @@ class Songcover():
         Songcover.set_sun_to_curr_frame()
 
         # start animation
-        #bpy.ops.screen.animation_play()
+        bpy.ops.screen.animation_play()
 
     def sun_animation(last_frame):
         # variables
@@ -513,7 +529,7 @@ class Songcover():
         train_duration = frame_rate * train_speed
 
         # get train obj
-        train: bpy.types.Object = bpy.data.objects["Straßenbahn"]
+        train: bpy.types.Object = bpy.data.objects["Strassenbahn"]
 
         train.location[0] = train_start_x
         train.keyframe_insert(data_path="location", frame=start_frame)
