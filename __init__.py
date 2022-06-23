@@ -36,7 +36,7 @@ REDIRECT_URL = "http://127.0.0.1:5555/callback.html"
 global user_code
 user_code = ""
 
-access_token_user = "BQDEgKkXgQgNRIL8GoLimJjz8Zo0qrlZgTM7eY5Ia-MEBIVw4neSg6qsEA6cwmmwjbBdIgL25-VISReP3jRpiX8GACWtG-0NNvow8NhRtIBDZM00amzMZHfDY6lWId60FNfWFBDaKJlLjj9sqrbrnNp3w-9j6ONAgXUcf3E9BUTdmXN7k7Plxv6mCVLZoKlfiDr4Uu-JBNXh4Mhh"
+access_token_user = ""
 
 AUTH_URL = "https://accounts.spotify.com/api/token"
 CLIENT_AUTH_URL = "https://accounts.spotify.com/authorize"
@@ -107,6 +107,9 @@ class Songcover():
         Songcover.clear_environment() 
         Songcover.create_environment()
         Songcover.generate_collection()
+        Songcover.getCurrentlyPlayedSong()
+        # set current frame
+        Songcover.set_sun_to_curr_frame()
         Songcover.animation_handler()
         # requestAuthorization()
         # getAccessToken()
@@ -120,9 +123,10 @@ class Songcover():
         # getMsIntoCurSong()
         # getProgressIntoCurSong()
         # getCoverOfCurrentSong()
-        Songcover.getCurrentlyPlayedSong()
         # updateCurrentSong()
         bpy.app.timers.register(Songcover.run_every_n_second)
+        # start animation
+        bpy.ops.screen.animation_play()
 
     def requestAuthorization():
         url = CLIENT_AUTH_URL
@@ -418,9 +422,8 @@ class Songcover():
         if is_new_song: 
             Songcover.update_cover()
             Songcover.animation_handler()
-
-        #update sun position
-        Songcover.set_sun_to_curr_frame()
+            #update sun position
+            Songcover.set_sun_to_curr_frame()
 
         #counter += 1
         return WAIT_TIME   
@@ -465,11 +468,8 @@ class Songcover():
         Songcover.world_background_animation(last_frame)
         Songcover.train_animation(last_frame, frame_rate)
 
-        # set current frame
-        Songcover.set_sun_to_curr_frame()
-
         # start animation
-        bpy.ops.screen.animation_play()
+        #bpy.ops.screen.animation_play()
 
     def sun_animation(last_frame):
         # variables
