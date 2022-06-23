@@ -12,7 +12,7 @@ import bpy
 import base64
 
 bl_info = {
-    "name": "Create Songcover",
+    "name": "Spotify API Visualizier",
     "author": "Samuel Kasper, Alexander Reiprich, David Niemann, Daniel Meisler",
     "version": (1.2, 0),
     "blender": (2, 91, 0),
@@ -25,7 +25,7 @@ def main():
     # löscht selektierte objekte
     bpy.ops.object.delete(use_global=False, confirm=False)
     bpy.ops.outliner.orphans_purge()  # löscht überbleibende Meshdaten etc.
-    Songcover()
+
 
 
 CLIENT_ID = "56651af3c4134034b9977c0a650b2cdf"
@@ -36,6 +36,7 @@ REDIRECT_URL = "http://127.0.0.1:5555/callback.html"
 global user_code
 user_code = ""
 
+global access_token_user
 access_token_user = ""
 
 AUTH_URL = "https://accounts.spotify.com/api/token"
@@ -74,15 +75,15 @@ class MyProperties(bpy.types.PropertyGroup):
         default="",
     )
     
-    train_speed: bpy.props.FloatProperty(name= "Train Speed", soft_min= 20, soft_max= 50, default= 1)
+    train_speed: bpy.props.FloatProperty(name= "Train Duration", soft_min= 20, soft_max= 50, default= 20)
 
-    aktualsierung: bpy.props.FloatProperty(name= "Timer", soft_min= 1, soft_max= 10, default= 1)
+    aktualisierung: bpy.props.FloatProperty(name= "Timer", soft_min= 1, soft_max= 10, default= 1)
     
 
-class Spotify_Panel(bpy.types.Panel):
+class SPOTIFY_PT_panel(bpy.types.Panel):
     """Creates a Panel in the scene context of the properties editor"""
     bl_label = "Spotify Addon"
-    bl_idname = "Spotify_Panel"
+    bl_idname = "SPOTIFY_PT_panel"
     bl_space_type = 'VIEW_3D'
     bl_region_type = 'UI'
     bl_category = "Spotify Addon"
@@ -92,14 +93,25 @@ class Spotify_Panel(bpy.types.Panel):
         scene = context.scene
         mytool = scene.my_tool
 
-        token_url = layout.operator('wm.url_open', text="get spotify token", icon="URL")
+        token_url = layout.operator('wm.url_open', text="Get spotify token", icon="URL")
         token_url.url = links["Spotify"]
-        
+
         layout.prop(mytool, "spotify_user_token")
         layout.prop(mytool, "train_speed")
-        layout.prop(mytool, "aktualsierung")
+        layout.prop(mytool, "aktualisierung")
+        self.layout.operator('button.execute', text='Ausführen')
 
-        self.access_token_user = mytool.spotify_user_token
+
+class executeAction(bpy.types.Operator):
+    bl_idname = "button.execute"
+    bl_label ="execute"
+
+    def execute(self, context):
+        global access_token_user
+        access_token_user = bpy.data.scenes["Scene"].my_tool.spotify_user_token
+
+        Songcover()
+        return {'FINISHED'}
 
 class Songcover():
     def __init__(self):
@@ -197,7 +209,7 @@ class Songcover():
     # Returns an object containing information about the currently played song
 
     def getCurrentlyPlayedSong():
-        
+        global access_token_user
         curPlayingUrl = BASE_URL + "me/player/currently-playing"
         header = {
             'Authorization': f'Bearer {access_token_user}'.format(token=access_token)
@@ -415,6 +427,7 @@ class Songcover():
     
     def run_every_n_second():
         global WAIT_TIME
+        WAIT_TIME = bpy.data.scenes["Scene"].my_tool.aktualisierung
         global counter
         global TEST_SONG_COVERS
     
@@ -521,7 +534,7 @@ class Songcover():
     def train_animation(last_frame, frame_rate):
         train_start_x = 8
         train_end_x = -10
-        start_frame = math.floor(last_frame/4)
+        start_frame = math.floor(last_frame/10)
         train_speed = math.floor(bpy.data.scenes["Scene"].my_tool.train_speed) #min. 20 - max. 50 
         if train_speed < 20:
             train_speed = 20
@@ -558,13 +571,15 @@ class Autostart(bpy.types.Operator):
 def register():
     bpy.utils.register_class(Autostart)
     bpy.utils.register_class(MyProperties)
-    bpy.utils.register_class(Spotify_Panel)
+    bpy.utils.register_class(SPOTIFY_PT_panel)
+    bpy.utils.register_class(executeAction)
     bpy.types.Scene.my_tool = bpy.props.PointerProperty(type= MyProperties)
 
 def unregister():
     bpy.utils.unregister_class(Autostart)
     bpy.utils.unregister_class(MyProperties)
-    bpy.utils.unregister_class(Spotify_Panel)
+    bpy.utils.unregister_class(SPOTIFY_PT_panel)
+    bpy.utils.unregister_class(executeAction)
     del bpy.types.Scene.my_tool
 
 
