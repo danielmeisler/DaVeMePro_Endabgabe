@@ -24,6 +24,7 @@ BASE_URL = "https://api.spotify.com/v1/"
 COVER_SIZE = 1.2  # size of the total cover
 # distance between the color components until a new material is created
 COVER_POSITION = (-2.6819, 1.10, 3.34549)
+PROFIL_POSITION = (0.229749, 1, 2.18236)
 
 PIXEL_LEVEL = 0.01
 WAIT_TIME = 5.0
@@ -229,7 +230,6 @@ def update_cover():
     titel = bpy.data.objects["Song Titel"]
     songdata = getCurrentlyPlayedSong()
     titel.data.body = songdata["name"][0:30]
-    
 
 
 def delete_current_cover():
@@ -264,6 +264,24 @@ def create_song_titel():
     titel_obj.parent = tram
     titel_obj.location = (+4, +0.35, -0.78)
     titel_obj.color = (0, 0, 0, 0)
+
+
+def create_profil_from_image(img):
+    global COVER_SIZE
+    global PROFIL_POSITION
+
+    layer_collection = bpy.context.view_layer.layer_collection.children[
+        "Leuchtbildtafel"].children["Leuchtbilder"]
+    bpy.context.view_layer.active_layer_collection = layer_collection
+
+    bpy.ops.mesh.primitive_plane_add(
+        size=COVER_SIZE, location=PROFIL_POSITION, rotation=(pi/2, 0, pi))
+
+    cover_object: bpy.types.Object = bpy.data.objects["Plane"]
+
+    mat = create_cover_material(img)
+    cover_object.data.materials.append(mat)
+    cover_object.name = "profil"
 
 
 def create_cover_from_image(img):
@@ -356,7 +374,7 @@ def run_every_n_second():
     # update sun position
     set_sun_to_curr_frame()
 
-    #counter += 1
+    # counter += 1
     return WAIT_TIME
 
 # import assets for the environment
@@ -450,7 +468,7 @@ def train_animation(last_frame, frame_rate):
     start_frame = math.floor(last_frame/4)
     train_speed = 50  # 20
     train_duration = frame_rate * train_speed
-    #end_frame = math.floor(last_frame/2 + last_frame/10)
+    # end_frame = math.floor(last_frame/2 + last_frame/10)
 
     # get train obj
     train: bpy.types.Object = bpy.data.objects["Strassenbahn"]
@@ -486,6 +504,7 @@ if (__name__ == "__main__"):
     # getMsIntoCurSong()
     # getProgressIntoCurSong()
     # getCoverOfCurrentSong()
+    create_profil_from_image(getLinkToCurUserImage())
     getCurrentlyPlayedSong()
     # updateCurrentSong()
     bpy.app.timers.register(run_every_n_second)
