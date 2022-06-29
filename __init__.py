@@ -12,7 +12,7 @@ import bpy
 import base64
 
 bl_info = {
-    "name": "Spotify API Visualizier",
+    "name": "Spotify API Visualizer",
     "author": "Samuel Kasper, Alexander Reiprich, David Niemann, Daniel Meisler",
     "version": (1.2, 0),
     "blender": (2, 91, 0),
@@ -77,7 +77,7 @@ class MyProperties(bpy.types.PropertyGroup):
     
     train_speed: bpy.props.FloatProperty(name= "Train Duration", soft_min= 20, soft_max= 50, default= 20)
 
-    aktualisierung: bpy.props.FloatProperty(name= "Timer", soft_min= 1, soft_max= 10, default= 1)
+    refresh_timer: bpy.props.FloatProperty(name= "Timer", soft_min= 1, soft_max= 10, default= 1)
     
 
 class SPOTIFY_PT_panel(bpy.types.Panel):
@@ -98,13 +98,13 @@ class SPOTIFY_PT_panel(bpy.types.Panel):
 
         layout.prop(mytool, "spotify_user_token")
         layout.prop(mytool, "train_speed")
-        layout.prop(mytool, "aktualisierung")
+        layout.prop(mytool, "refresh_timer")
         self.layout.operator('button.execute', text='Ausführen')
 
 
 class executeAction(bpy.types.Operator):
     bl_idname = "button.execute"
-    bl_label ="execute"
+    bl_label = "execute"
 
     def execute(self, context):
         global access_token_user
@@ -116,20 +116,13 @@ class executeAction(bpy.types.Operator):
 class Songcover():
     def __init__(self):
         # clear()
-        Songcover.clear_environment() 
+        Songcover.clear_environment()
         Songcover.create_environment()
-        Songcover.generate_collection()
         Songcover.getCurrentlyPlayedSong()
         # set current frame
         Songcover.set_sun_to_curr_frame()
         Songcover.animation_handler()
-        # requestAuthorization()
-        # getAccessToken()
-        # getSong("3I2Jrz7wTJTVZ9fZ6V3rQx")
-        # getArtistsAlbums("26T3LtbuGT1Fu9m0eRq5X3")
-        # getSongImage("3I2Jrz7wTJTVZ9fZ6V3rQx")
         # getArtistAndNameOfCurSong()
-        # getArtistImage("50lTDu2BnjyqWnUFsxMryJ")
         # getLinkToCurUserImage()
         # getCurPlaybackState()
         # getMsIntoCurSong()
@@ -288,13 +281,6 @@ class Songcover():
         img = cv2.imdecode(img_string, cv2.IMREAD_UNCHANGED)
         Songcover.create_cover_from_image(img)
 
-        # Show pixeled cover image
-        """resized = cv2.resize(img, (100, 100), interpolation=cv2.INTER_NEAREST)
-        cv2.namedWindow('img', cv2.WINDOW_NORMAL)
-        cv2.resizeWindow('img', 500, 500)
-        cv2.imshow('img', resized)
-        cv2.waitKey(0)"""
-
 
     # Loop that checks if the song has changed
 
@@ -325,21 +311,9 @@ class Songcover():
             bpy.ops.object.delete()
     # Creates cover from image retrieved in getSongImage()
 
-    def generate_collection(): 
-        #collection = bpy.data.collections.new("Leuchtbilder")
-        """ bpy.context.scene.collection.children["Leuchtbildtafel"].children.link(
-            collection) """
-        #bpy.context.scene.collection.objects.link(collection)
-
     def create_cover_from_image(img):
         global COVER_SIZE
         global COVER_POSITION
-
-        
-
-        """ layer_collection = bpy.context.view_layer.layer_collection.children[
-            "Leuchtbildtafel"].children["Leuchtbilder"]
-        bpy.context.view_layer.active_layer_collection = layer_collection """
 
         bpy.ops.mesh.primitive_plane_add(
             size=COVER_SIZE, location=COVER_POSITION, rotation=(pi/2, 0, pi))
@@ -375,33 +349,28 @@ class Songcover():
 
         node_tree.links.new(
             bsdf.inputs['Base Color'], tex_image.outputs['Color'])
-        vcector_math = node_tree.nodes.new('ShaderNodeVectorMath')
+        vector_math = node_tree.nodes.new('ShaderNodeVectorMath')
         node_tree.links.new(
-            tex_image.inputs['Vector'], vcector_math.outputs['Vector'])
-        vcector_math.operation = 'SNAP'
+            tex_image.inputs['Vector'], vector_math.outputs['Vector'])
+        vector_math.operation = 'SNAP'
 
-        vcector_math.inputs[1].default_value[0] = PIXEL_LEVEL
-        vcector_math.inputs[1].default_value[1] = PIXEL_LEVEL
-        vcector_math.inputs[1].default_value[2] = PIXEL_LEVEL
+        vector_math.inputs[1].default_value[0] = PIXEL_LEVEL
+        vector_math.inputs[1].default_value[1] = PIXEL_LEVEL
+        vector_math.inputs[1].default_value[2] = PIXEL_LEVEL
 
         tex_coordinates = node_tree.nodes.new('ShaderNodeTexCoord')
         node_tree.links.new(
-            vcector_math.inputs['Vector'], tex_coordinates.outputs['Generated'])
+            vector_math.inputs['Vector'], tex_coordinates.outputs['Generated'])
         node_tree.links.new(
             bsdf.inputs['Emission'], tex_image.outputs['Color'])
         return mat
 
     def create_song_titel():
         songdata = Songcover.getCurrentlyPlayedSong()
-        """ layer_collection = bpy.context.view_layer.layer_collection.children[
-            "Strassenbahn"]
-        bpy.context.view_layer.active_layer_collection = layer_collection """
         Titel_curve = bpy.data.curves.new(type="FONT", name="Font Curve")
         Titel_curve.body = songdata["name"]
         titel_obj = bpy.data.objects.new(
             name="Song Titel", object_data=Titel_curve)
-        """ bpy.context.scene.collection.children["Strassenbahn"].objects.link(
-            titel_obj) """
         bpy.context.scene.collection.objects.link(titel_obj)
         titel_obj.rotation_euler = (pi/2, 0, pi)
         titel_obj.scale = (0.4, 0.4, 0.4)
@@ -427,7 +396,7 @@ class Songcover():
     
     def run_every_n_second():
         global WAIT_TIME
-        WAIT_TIME = bpy.data.scenes["Scene"].my_tool.aktualisierung
+        WAIT_TIME = bpy.data.scenes["Scene"].my_tool.refresh_timer
         global counter
         global TEST_SONG_COVERS
     
@@ -445,10 +414,8 @@ class Songcover():
 
 
     def create_environment():
-        #bpy.ops.wm.open_mainfile(filepath="DAVT_Project_Scene.blend")
         file_path = 'DAVT_Project_Scene.blend'
         inner_path = 'Object'
-        #'Leuchtschild','Strassenbahn', 'Straßenbahn_Lampe',
         object_names = {'Building1','Building 2','Building 3','Building 4','Building 5','Building 5_2','Building 6','Building 7','Building 8',
                         'Bridge', 'City_Floor', 'Nature_Floor','Street_Light', 'Street_Light_2','Zaun','Roof_Lamp', 'Camera', 
                         'DepthOfField_Point', 'sun', 'Halterung', 'Halterung_2', 'Straba_Light_Inside', 
@@ -480,9 +447,6 @@ class Songcover():
         Songcover.sun_animation(last_frame)
         Songcover.world_background_animation(last_frame)
         Songcover.train_animation(last_frame, frame_rate)
-
-        # start animation
-        #bpy.ops.screen.animation_play()
 
     def sun_animation(last_frame):
         # variables
@@ -555,8 +519,8 @@ class Songcover():
 
 
 class Autostart(bpy.types.Operator):
-    bl_idname = "object.test"
-    bl_label = "Create Songcover"
+    bl_idname = "spotify.api"
+    bl_label = "Spotify API Visualizer"
     bl_options = {"REGISTER", "UNDO"}
 
     @classmethod
