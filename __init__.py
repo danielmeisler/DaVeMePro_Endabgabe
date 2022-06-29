@@ -46,6 +46,7 @@ BASE_URL = "https://api.spotify.com/v1/"
 COVER_SIZE = 1.2  # size of the total cover
 # distance between the color components until a new material is created
 COVER_POSITION = (-2.6819, 1.10, 3.34549)
+PROFILE_POSITION = (0.229749, 1.1, 2.18236)
 
 PIXEL_LEVEL = 0.01
 WAIT_TIME = 5.0
@@ -122,6 +123,7 @@ class Songcover():
         # set current frame
         Songcover.set_sun_to_curr_frame()
         Songcover.animation_handler()
+        Songcover.create_board_from_image(Songcover.getLinkToCurUserImage(), "profile", PROFILE_POSITION)
         # getArtistAndNameOfCurSong()
         # getLinkToCurUserImage()
         # getCurPlaybackState()
@@ -272,6 +274,7 @@ class Songcover():
     # Gets cover from track id
 
     def getSongImage(track_id):
+        global COVER_POSITION
         r = requests.get(BASE_URL + "tracks/" + track_id, headers=headers)
         d = r.json()
 
@@ -279,7 +282,7 @@ class Songcover():
         cover_image = requests.get(d["album"]["images"][0]['url'])
         img_string = np.frombuffer(cover_image.content, np.uint8)
         img = cv2.imdecode(img_string, cv2.IMREAD_UNCHANGED)
-        Songcover.create_cover_from_image(img)
+        Songcover.create_board_from_image(img, "cover", COVER_POSITION)
 
 
     # Loop that checks if the song has changed
@@ -311,21 +314,19 @@ class Songcover():
             bpy.ops.object.delete()
     # Creates cover from image retrieved in getSongImage()
 
-    def create_cover_from_image(img):
+    def create_board_from_image(img, name, position):
         global COVER_SIZE
-        global COVER_POSITION
 
         bpy.ops.mesh.primitive_plane_add(
-            size=COVER_SIZE, location=COVER_POSITION, rotation=(pi/2, 0, pi))
+        size=COVER_SIZE, location=position, rotation=(pi/2, 0, pi))
 
         cover_object: bpy.types.Object = bpy.data.objects["Plane"]
 
-        mat = Songcover.create_cover_material(img)
+        mat = Songcover.create_board_material(img)
         cover_object.data.materials.append(mat)
-        cover_object.name = "cover"
+        cover_object.name = name
 
-
-    def create_cover_material(cover_img):
+    def create_board_material(cover_img):
         global COVER_SIZE
         global PIXEL_LEVEL
         mat: bpy.types.Material = bpy.data.materials.new("mat_Cover")
