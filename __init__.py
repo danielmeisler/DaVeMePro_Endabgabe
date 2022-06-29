@@ -417,10 +417,10 @@ class Songcover():
     def create_environment():
         file_path = 'DAVT_Project_Scene.blend'
         inner_path = 'Object'
-        object_names = {'Building1','Building 2','Building 3','Building 4','Building 5','Building 5_2','Building 6','Building 7','Building 8',
+        object_names = {'Building 1','Building 2','Building 3','Building 4','Building 5','Building 5_2','Building 6','Building 7','Building 8',
                         'Bridge', 'City_Floor', 'Nature_Floor','Street_Light', 'Street_Light_2','Zaun','Roof_Lamp', 'Camera', 
-                        'DepthOfField_Point', 'sun', 'Halterung', 'Halterung_2', 'Straba_Light_Inside', 
-                        'Street_Light_Top', 'Point.001', 'Street_Light_Top2','Point.002'}
+                        'DepthOfField_Point', 'sun', 'Halterung', 'Halterung_2', 'Halterung_3', 'Halterung_4', 'Halterung_5', 'Straba_Light_Inside', 
+                        'Street_Light_Top', 'Point.001', 'Street_Light_Top2','Point.002', 'Blimp_Cabine', 'Blimp_Wing', 'Blimp_Wing2', 'Blimp_Wing3', 'Blimp_Wing4'}
        
         for obj in object_names:
             bpy.ops.wm.append(
