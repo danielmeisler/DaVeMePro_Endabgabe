@@ -260,7 +260,7 @@ def create_song_titel():
         titel_obj)
     titel_obj.rotation_euler = (pi/2, 0, pi)
     titel_obj.scale = (0.4, 0.4, 0.4)
-    tram = bpy.data.objects["Straßenbahn"]
+    tram = bpy.data.objects["Strassenbahn"]
     titel_obj.parent = tram
     titel_obj.location = (+4, +0.35, -0.78)
     titel_obj.color = (0, 0, 0, 0)
@@ -453,7 +453,7 @@ def train_animation(last_frame, frame_rate):
     #end_frame = math.floor(last_frame/2 + last_frame/10)
 
     # get train obj
-    train: bpy.types.Object = bpy.data.objects["Straßenbahn"]
+    train: bpy.types.Object = bpy.data.objects["Strassenbahn"]
 
     train.location[0] = train_start_x
     train.keyframe_insert(data_path="location", frame=start_frame)
