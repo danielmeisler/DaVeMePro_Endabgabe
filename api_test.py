@@ -24,7 +24,7 @@ BASE_URL = "https://api.spotify.com/v1/"
 COVER_SIZE = 1.2  # size of the total cover
 # distance between the color components until a new material is created
 COVER_POSITION = (-2.6819, 1.10, 3.34549)
-PROFIL_POSITION = (0.229749, 1, 2.18236)
+PROFIL_POSITION = (0.229749, 1.1, 2.18236)
 
 PIXEL_LEVEL = 0.01
 WAIT_TIME = 5.0
@@ -192,6 +192,7 @@ def getCoverOfCurrentSong():
 # Gets cover from track id
 
 def getSongImage(track_id):
+    global COVER_POSITION
     r = requests.get(BASE_URL + "tracks/" + track_id, headers=headers)
     d = r.json()
 
@@ -199,7 +200,7 @@ def getSongImage(track_id):
     cover_image = requests.get(d["album"]["images"][0]['url'])
     img_string = np.frombuffer(cover_image.content, np.uint8)
     img = cv2.imdecode(img_string, cv2.IMREAD_UNCHANGED)
-    create_cover_from_image(img)
+    create_board_from_image(img, "cover", COVER_POSITION)
 
     # Show pixeled cover image
     """resized = cv2.resize(img, (100, 100), interpolation=cv2.INTER_NEAREST)
@@ -266,43 +267,23 @@ def create_song_titel():
     titel_obj.color = (0, 0, 0, 0)
 
 
-def create_profil_from_image(img):
+def create_board_from_image(img, name, position):
     global COVER_SIZE
-    global PROFIL_POSITION
 
     layer_collection = bpy.context.view_layer.layer_collection.children[
         "Leuchtbildtafel"].children["Leuchtbilder"]
     bpy.context.view_layer.active_layer_collection = layer_collection
 
     bpy.ops.mesh.primitive_plane_add(
-        size=COVER_SIZE, location=PROFIL_POSITION, rotation=(pi/2, 0, pi))
+        size=COVER_SIZE, location=position, rotation=(pi/2, 0, pi))
 
     cover_object: bpy.types.Object = bpy.data.objects["Plane"]
 
-    mat = create_cover_material(img)
+    mat = create_board_material(img)
     cover_object.data.materials.append(mat)
-    cover_object.name = "profil"
+    cover_object.name = name
 
-
-def create_cover_from_image(img):
-    global COVER_SIZE
-    global COVER_POSITION
-
-    layer_collection = bpy.context.view_layer.layer_collection.children[
-        "Leuchtbildtafel"].children["Leuchtbilder"]
-    bpy.context.view_layer.active_layer_collection = layer_collection
-
-    bpy.ops.mesh.primitive_plane_add(
-        size=COVER_SIZE, location=COVER_POSITION, rotation=(pi/2, 0, pi))
-
-    cover_object: bpy.types.Object = bpy.data.objects["Plane"]
-
-    mat = create_cover_material(img)
-    cover_object.data.materials.append(mat)
-    cover_object.name = "cover"
-
-
-def create_cover_material(cover_img):
+def create_board_material(cover_img):
     global COVER_SIZE
     global PIXEL_LEVEL
     mat: bpy.types.Material = bpy.data.materials.new("mat_Cover")
@@ -504,7 +485,7 @@ if (__name__ == "__main__"):
     # getMsIntoCurSong()
     # getProgressIntoCurSong()
     # getCoverOfCurrentSong()
-    create_profil_from_image(getLinkToCurUserImage())
+    create_board_from_image(getLinkToCurUserImage(), "profil", PROFIL_POSITION )
     getCurrentlyPlayedSong()
     # updateCurrentSong()
     bpy.app.timers.register(run_every_n_second)
