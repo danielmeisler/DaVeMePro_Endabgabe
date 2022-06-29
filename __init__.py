@@ -50,6 +50,8 @@ PROFILE_POSITION = (0.229749, 1.1, 2.18236)
 
 PIXEL_LEVEL = 0.01
 WAIT_TIME = 5.0
+ARTIST_CHANGE_TIME = 10.0
+CURRENT_ARTIST_POS = 0
 
 song_id = ""
 # get access token
@@ -94,7 +96,7 @@ class SPOTIFY_PT_panel(bpy.types.Panel):
         scene = context.scene
         mytool = scene.my_tool
 
-        token_url = layout.operator('wm.url_open', text="Get spotify token", icon="URL")
+        token_url = layout.operator('wm.url_open', text="Get Spotify Token", icon="URL")
         token_url.url = links["Spotify"]
 
         layout.prop(mytool, "spotify_user_token")
@@ -132,6 +134,7 @@ class Songcover():
         # getCoverOfCurrentSong()
         # updateCurrentSong()
         bpy.app.timers.register(Songcover.run_every_n_second)
+        bpy.app.timers.register(Songcover.update_top_artist)
         # start animation
         bpy.ops.screen.animation_play()
 
@@ -257,12 +260,55 @@ class Songcover():
             'Authorization': f'Bearer {access_token_user}'.format(token=access_token)
         }
         r = requests.get(url=userUrl, headers=header)
-        respJson = r.json()
-        image = requests.get(respJson["images"][0]["url"])
-        img_string = np.frombuffer(image.content, np.uint8)
-        img = cv2.imdecode(img_string, cv2.IMREAD_UNCHANGED)
-        return img
+        if (r.status_code == 200):
+            respJson = r.json()
+            image = requests.get(respJson["images"][0]["url"])
+            img_string = np.frombuffer(image.content, np.uint8)
+            img = cv2.imdecode(img_string, cv2.IMREAD_UNCHANGED)
+            return img
+        else:
+            image = requests.get("https://storage.googleapis.com/pr-newsroom-wp/1/2018/11/Spotify_Logo_RGB_Green.png")
+            img_string = np.frombuffer(image.content, np.uint8)
+            img = cv2.imdecode(img_string, cv2.IMREAD_UNCHANGED)
+            return img
 
+    # Gets current users top 3 artists of this month
+
+    def getCurUserTopArtists():
+        topArtistsUrl = BASE_URL + "me/top/artists?time_range=medium_term&limit=3&offset=0"
+        header = {
+            'Authorization': f'Bearer {access_token_user}'.format(token=access_token)
+        }
+        r = requests.get(url=topArtistsUrl, headers=header)
+        respJson = r.json()
+
+        topArtists = ["Artists of the Month", respJson["items"][0]["name"], respJson["items"][1]["name"], respJson["items"][2]["name"]]
+
+        return topArtists
+
+    # Gets current users top track of this week
+
+    def getCurUserTopSong(): 
+        topTrackUrl = BASE_URL + "me/top/tracks?time_range=short_term&limit=1&offset=0"
+        header = {
+            'Authorization': f'Bearer {access_token_user}'.format(token=access_token)
+        }
+        r = requests.get(url=topTrackUrl, headers=header)
+        respJson = r.json()
+
+        return respJson["items"][0]["name"]
+
+    # Get current users display name
+
+    def getCurUserDisplayName():
+        displayUrl = BASE_URL + "me"
+        header = {
+            'Authorization': f'Bearer {access_token_user}'.format(token=access_token)
+        }
+        r = requests.get(url=displayUrl, headers=header)
+        respJson = r.json()
+        
+        return respJson["display_name"]
 
     # Gets cover of current song
 
@@ -380,6 +426,51 @@ class Songcover():
         titel_obj.location = (+4, +0.35, -0.78)
         titel_obj.color = (0, 0, 0, 0)
 
+    def create_display_name():
+        displayname = Songcover.getCurUserDisplayName()
+        displayname_curve = bpy.data.curves.new(type="FONT", name="Font Curve")
+        displayname_curve.body = displayname
+        titel_obj = bpy.data.objects.new(
+            name="Displayname", object_data=displayname_curve)
+        bpy.context.scene.collection.objects.link(titel_obj)
+        bpy.ops.object.origin_set(type="ORIGIN_GEOMETRY")
+        titel_obj.rotation_euler = (pi/2, -(pi/2), pi)
+        titel_obj.scale = (0.26, 1, 1)
+        left_panel = bpy.data.objects["Halterung_4"]
+        titel_obj.parent = left_panel
+        titel_obj.location = (-0.17, -0.85, -0.9)
+        titel_obj.color = (0, 0, 0, 0)
+
+    def create_top_artists():
+        artists = Songcover.getCurUserTopArtists()
+        artists_curve = bpy.data.curves.new(type="FONT", name="Font Curve")
+        artists_curve.body = artists[0]
+        artists_obj = bpy.data.objects.new(
+            name="Top-Artists", object_data=artists_curve)
+        bpy.context.scene.collection.objects.link(artists_obj)
+        bpy.ops.object.origin_set(type="ORIGIN_GEOMETRY")
+        artists_obj.rotation_euler = (pi/2, 0, pi)
+        artists_obj.scale = (0.32, 0.61, 0.65)
+        left_panel = bpy.data.objects["Halterung_5"]
+        artists_obj.parent = left_panel
+        artists_obj.location = (1.32, -0.88, -0.2)
+        artists_obj.color = (0, 0, 0, 0)
+
+    def create_top_track(): 
+        track = Songcover.getCurUserTopSong()
+        track_curve = bpy.data.curves.new(type="FONT", name="Font Curve")
+        track_curve.body = track
+        track_obj = bpy.data.objects.new(
+            name="Top-Track", object_data=track_curve)
+        bpy.context.scene.collection.objects.link(track_obj)
+        bpy.ops.object.origin_set(type="ORIGIN_GEOMETRY") 
+        track_obj.rotation_euler = (pi/2, (pi/2), pi)
+        track_obj.scale = (0.22, 1.34, 1)
+        right_panel = bpy.data.objects["Halterung_3"]
+        track_obj.parent = right_panel
+        track_obj.location = (0.38, -0.75, 0.94)
+        track_obj.color = (0, 0, 0, 0)
+
     # Clears console
     def clear_environment(): 
         # Select all objects
@@ -411,6 +502,22 @@ class Songcover():
         #counter += 1
         return WAIT_TIME   
 
+    def update_top_artist():
+        # TODO: Fix lol
+        global CURRENT_ARTIST_POS
+        CURRENT_ARTIST_POS = 10.0
+        allArtists = Songcover.getCurUserTopArtists()
+        curArtist = allArtists[CURRENT_ARTIST_POS]
+        artists = bpy.data.objects["Top-Artists"]
+        artists.data.body = curArtist
+        if CURRENT_ARTIST_POS == 3:
+            CURRENT_ARTIST_POS = 0
+        else:
+            CURRENT_ARTIST_POS = CURRENT_ARTIST_POS + 1
+
+        return ARTIST_CHANGE_TIME
+
+
     # import assets for the environment
 
 
@@ -429,6 +536,9 @@ class Songcover():
                 filename=obj)
 
         Songcover.create_song_titel()
+        Songcover.create_display_name()
+        Songcover.create_top_artists()
+        Songcover.create_top_track()
 
     def animation_handler():
 

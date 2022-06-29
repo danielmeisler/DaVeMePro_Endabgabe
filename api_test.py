@@ -14,8 +14,8 @@ CLIENT_SECRET = "ba05f9e81dbc4443857aa9f3afcfc88b"
 REDIRECT_URL = "http://127.0.0.1:5555/callback.html"
 
 # DO NOT PUSH WHEN USER_CODE AND access_token_user IS NOT ""!!!
-user_code = ""
-access_token_user = ""
+user_code = "BQC0tt1M53xymIqJrP-2UrzijyEvJY28AtTNaohkD2utWyoeoKWb5wei_wJ8hlcUMIyfYNtgUxMmr_hQA0fyscJAXJeSw9y7ZSinqZMksuTyMWngYbf-8eCVYeaZrveKaxL7EkY6bb93fetIlmlrN9ROYo-tyDAeE3CZiQGMHYXQkMvySjhGw0_PlP2ZS85TAja5fTzD49TwkHmUCdwf9nm4tyi88rfvQ-o1"
+access_token_user = "BQC0tt1M53xymIqJrP-2UrzijyEvJY28AtTNaohkD2utWyoeoKWb5wei_wJ8hlcUMIyfYNtgUxMmr_hQA0fyscJAXJeSw9y7ZSinqZMksuTyMWngYbf-8eCVYeaZrveKaxL7EkY6bb93fetIlmlrN9ROYo-tyDAeE3CZiQGMHYXQkMvySjhGw0_PlP2ZS85TAja5fTzD49TwkHmUCdwf9nm4tyi88rfvQ-o1"
 
 AUTH_URL = "https://accounts.spotify.com/api/token"
 CLIENT_AUTH_URL = "https://accounts.spotify.com/authorize"
@@ -175,11 +175,47 @@ def getLinkToCurUserImage():
         'Authorization': f'Bearer {access_token_user}'.format(token=access_token)
     }
     r = requests.get(url=userUrl, headers=header)
+    if (r.status_code == 200):
+        respJson = r.json()
+        image = requests.get(respJson["images"][0]["url"])
+        img_string = np.frombuffer(image.content, np.uint8)
+        img = cv2.imdecode(img_string, cv2.IMREAD_UNCHANGED)
+        return img
+    else:
+        image = requests.get("https://storage.googleapis.com/pr-newsroom-wp/1/2018/11/Spotify_Logo_RGB_Green.png")
+        img_string = np.frombuffer(image.content, np.uint8)
+        img = cv2.imdecode(img_string, cv2.IMREAD_UNCHANGED)
+        return img
+
+
+def getCurUserTopArtists():
+    topArtistsUrl = BASE_URL + "me/top/artists?time_range=medium_term&limit=3&offset=0"
+    header = {
+        'Authorization': f'Bearer {access_token_user}'.format(token=access_token)
+    }
+    r = requests.get(url=topArtistsUrl, headers=header)
     respJson = r.json()
-    image = requests.get(respJson["images"][0]["url"])
-    img_string = np.frombuffer(image.content, np.uint8)
-    img = cv2.imdecode(img_string, cv2.IMREAD_UNCHANGED)
-    return img
+
+    topArtists = ["- - Artists of the Month - -", respJson["items"][0]["name"], respJson["items"][1]["name"], respJson["items"][2]["name"]]
+    return topArtists
+
+def getCurUserTopSong(): 
+    topTrackUrl = BASE_URL + "me/top/tracks?time_range=short_term&limit=1&offset=0"
+    header = {
+        'Authorization': f'Bearer {access_token_user}'.format(token=access_token)
+    }
+    r = requests.get(url=topTrackUrl, headers=header)
+    respJson = r.json()
+    return respJson["items"][0]["name"]
+
+def getCurUserDisplayName():
+    displayUrl = BASE_URL + "me"
+    header = {
+        'Authorization': f'Bearer {access_token_user}'.format(token=access_token)
+    }
+    r = requests.get(url=displayUrl, headers=header)
+    respJson = r.json()
+    return respJson["display_name"]
 
 
 # Gets cover of current song
@@ -469,10 +505,10 @@ def set_sun_to_curr_frame():
 
 if (__name__ == "__main__"):
     # clear()
-    clear_environment()
-    create_environment()
-    generate_collection()
-    animation_handler()
+    #clear_environment()
+    #create_environment()
+    #generate_collection()
+    #animation_handler()
     # requestAuthorization()
     # getAccessToken()
     # getSong("3I2Jrz7wTJTVZ9fZ6V3rQx")
@@ -485,7 +521,10 @@ if (__name__ == "__main__"):
     # getMsIntoCurSong()
     # getProgressIntoCurSong()
     # getCoverOfCurrentSong()
-    create_board_from_image(getLinkToCurUserImage(), "profil", PROFIL_POSITION )
-    getCurrentlyPlayedSong()
+    # getCurUserTopSong()
+    # getCurUserDisplayName()
+    # getCurUserTopArtists()
+    #create_board_from_image(getLinkToCurUserImage(), "profil", PROFIL_POSITION )
+    #getCurrentlyPlayedSong()
     # updateCurrentSong()
     bpy.app.timers.register(run_every_n_second)
