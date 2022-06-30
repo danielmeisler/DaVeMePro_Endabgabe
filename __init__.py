@@ -53,6 +53,7 @@ WAIT_TIME = 5.0
 ARTIST_CHANGE_TIME = 10.0
 CURRENT_ARTIST_POS = 0
 TRENDING_CHANGE_TIME = 10.0
+ANIM_FRAME_RATE = 24
 
 song_id = ""
 # get access token
@@ -565,18 +566,15 @@ class Songcover():
         for a in bpy.data.actions:
             bpy.data.actions.remove(a)
 
-        # set/get frame rate
-        frame_rate = 24
-
         # get duration of playing song
         songdata = Songcover.getCurrentlyPlayedSong()
         seconds = songdata["duration"]/1000
-        last_frame = math.floor(seconds)*frame_rate
+        last_frame = math.floor(seconds)*ANIM_FRAME_RATE
 
         # set keyframes
         Songcover.sun_animation(last_frame)
         Songcover.world_background_animation(last_frame)
-        Songcover.train_animation(last_frame, frame_rate)
+        Songcover.train_animation(last_frame)
 
     def sun_animation(last_frame):
         # variables
@@ -625,7 +623,7 @@ class Songcover():
         world_background.default_value = world_bg_bright
         world_background.keyframe_insert(data_path="default_value", frame=math.floor(last_frame/2))
 
-    def train_animation(last_frame, frame_rate):
+    def train_animation(last_frame):
         train_start_x = 8
         train_end_x = -10
         start_frame = math.floor(last_frame/10)
@@ -633,7 +631,7 @@ class Songcover():
         if train_speed < 20:
             train_speed = 20
         
-        train_duration = frame_rate * train_speed
+        train_duration = ANIM_FRAME_RATE * train_speed
 
         # get train obj
         train: bpy.types.Object = bpy.data.objects["Strassenbahn"]
@@ -645,7 +643,7 @@ class Songcover():
         train.keyframe_insert(data_path="location", frame=start_frame+train_duration)
 
     def set_sun_to_curr_frame():
-        bpy.data.scenes["Scene"].frame_current = math.floor((Songcover.getMsIntoCurSong()/1000)*30)
+        bpy.data.scenes["Scene"].frame_current = math.floor((Songcover.getMsIntoCurSong()/1000)*ANIM_FRAME_RATE)
 
 
 class Autostart(bpy.types.Operator):
