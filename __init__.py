@@ -416,12 +416,15 @@ class Songcover():
         return mat
 
     def create_song_titel():
+        mat = bpy.data.materials.get("Window_Light")
         songdata = Songcover.getCurrentlyPlayedSong()
         Titel_curve = bpy.data.curves.new(type="FONT", name="Font Curve")
         Titel_curve.body = songdata["name"]
         titel_obj = bpy.data.objects.new(
             name="Song Titel", object_data=Titel_curve)
         bpy.context.scene.collection.objects.link(titel_obj)
+        bpy.context.view_layer.objects.active = bpy.data.objects["Song Titel"]
+        bpy.context.view_layer.objects.active.data.materials.append(mat)
         titel_obj.rotation_euler = (pi/2, 0, pi)
         titel_obj.scale = (0.4, 0.4, 0.4)
         tram = bpy.data.objects["Strassenbahn"]
