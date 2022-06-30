@@ -566,12 +566,12 @@ class Songcover():
             bpy.data.actions.remove(a)
 
         # set/get frame rate
-        frame_rate = 30
+        frame_rate = 24
 
         # get duration of playing song
         songdata = Songcover.getCurrentlyPlayedSong()
         seconds = songdata["duration"]/1000
-        last_frame = math.floor(seconds*frame_rate)
+        last_frame = math.floor(seconds)*frame_rate
 
         # set keyframes
         Songcover.sun_animation(last_frame)
