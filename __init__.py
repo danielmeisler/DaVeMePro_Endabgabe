@@ -503,9 +503,7 @@ class Songcover():
         return WAIT_TIME   
 
     def update_top_artist():
-        # TODO: Fix lol
         global CURRENT_ARTIST_POS
-        CURRENT_ARTIST_POS = 10.0
         allArtists = Songcover.getCurUserTopArtists()
         curArtist = allArtists[CURRENT_ARTIST_POS]
         artists = bpy.data.objects["Top-Artists"]
