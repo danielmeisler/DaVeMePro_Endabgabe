@@ -344,7 +344,7 @@ class Songcover():
             song_id = song_info["id"]
             Songcover.clear_console()
             print("--- Now Playing ---")
-            Songcover.getArtistAndNameOfCurSong()
+            print(Songcover.getArtistAndNameOfCurSong())
             return True
         return False
             
