@@ -507,9 +507,9 @@ class Songcover():
         if is_new_song: 
             Songcover.update_cover()
             Songcover.animation_handler()
-            #update sun position
-            Songcover.set_sun_to_curr_frame()
-
+            
+        #update sun position
+        Songcover.set_sun_to_curr_frame()
         #counter += 1
         return WAIT_TIME   
 
