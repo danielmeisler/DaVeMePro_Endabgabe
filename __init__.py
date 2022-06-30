@@ -52,6 +52,7 @@ PIXEL_LEVEL = 0.01
 WAIT_TIME = 5.0
 ARTIST_CHANGE_TIME = 10.0
 CURRENT_ARTIST_POS = 0
+TRENDING_CHANGE_TIME = 10.0
 
 song_id = ""
 # get access token
@@ -135,6 +136,7 @@ class Songcover():
         # updateCurrentSong()
         bpy.app.timers.register(Songcover.run_every_n_second)
         bpy.app.timers.register(Songcover.update_top_artist)
+        bpy.app.timers.register(Songcover.update_trending_track)
         # start animation
         bpy.ops.screen.animation_play()
 
@@ -296,7 +298,7 @@ class Songcover():
         r = requests.get(url=topTrackUrl, headers=header)
         respJson = r.json()
 
-        return respJson["items"][0]["name"]
+        return ["Currently Trending", respJson["items"][0]["name"]]
 
     # Get current users display name
 
@@ -427,27 +429,33 @@ class Songcover():
         titel_obj.color = (0, 0, 0, 0)
 
     def create_display_name():
+        mat = bpy.data.materials.get("Window_Light")
         displayname = Songcover.getCurUserDisplayName()
         displayname_curve = bpy.data.curves.new(type="FONT", name="Font Curve")
         displayname_curve.body = displayname
         titel_obj = bpy.data.objects.new(
             name="Displayname", object_data=displayname_curve)
         bpy.context.scene.collection.objects.link(titel_obj)
+        bpy.context.view_layer.objects.active = bpy.data.objects["Displayname"]
+        bpy.context.view_layer.objects.active.data.materials.append(mat)
         bpy.ops.object.origin_set(type="ORIGIN_GEOMETRY")
         titel_obj.rotation_euler = (pi/2, -(pi/2), pi)
-        titel_obj.scale = (0.26, 1, 1)
+        titel_obj.scale = (0.26, 1.45, 1)
         left_panel = bpy.data.objects["Halterung_4"]
         titel_obj.parent = left_panel
-        titel_obj.location = (-0.17, -0.85, -0.9)
+        titel_obj.location = (-0.34, -0.85, -0.9)
         titel_obj.color = (0, 0, 0, 0)
 
     def create_top_artists():
+        mat = bpy.data.materials.get("Window_Light")
         artists = Songcover.getCurUserTopArtists()
         artists_curve = bpy.data.curves.new(type="FONT", name="Font Curve")
         artists_curve.body = artists[0]
         artists_obj = bpy.data.objects.new(
             name="Top-Artists", object_data=artists_curve)
         bpy.context.scene.collection.objects.link(artists_obj)
+        bpy.context.view_layer.objects.active = bpy.data.objects["Top-Artists"]
+        bpy.context.view_layer.objects.active.data.materials.append(mat)
         bpy.ops.object.origin_set(type="ORIGIN_GEOMETRY")
         artists_obj.rotation_euler = (pi/2, 0, pi)
         artists_obj.scale = (0.32, 0.61, 0.65)
@@ -457,13 +465,15 @@ class Songcover():
         artists_obj.color = (0, 0, 0, 0)
 
     def create_top_track(): 
-        track = Songcover.getCurUserTopSong()
+        mat = bpy.data.materials.get("Window_Light")
+        track = Songcover.getCurUserTopSong()[1]
         track_curve = bpy.data.curves.new(type="FONT", name="Font Curve")
         track_curve.body = track
         track_obj = bpy.data.objects.new(
             name="Top-Track", object_data=track_curve)
         bpy.context.scene.collection.objects.link(track_obj)
-        bpy.ops.object.origin_set(type="ORIGIN_GEOMETRY") 
+        bpy.context.view_layer.objects.active = bpy.data.objects["Top-Track"]
+        bpy.context.view_layer.objects.active.data.materials.append(mat)
         track_obj.rotation_euler = (pi/2, (pi/2), pi)
         track_obj.scale = (0.22, 1.34, 1)
         right_panel = bpy.data.objects["Halterung_3"]
@@ -514,6 +524,17 @@ class Songcover():
             CURRENT_ARTIST_POS = CURRENT_ARTIST_POS + 1
 
         return ARTIST_CHANGE_TIME
+
+    def update_trending_track():
+        global TRENDING_CHANGE_TIME
+        track = bpy.data.objects["Top-Track"]
+        if track.data.body == "Currently Trending":
+            track.data.body = Songcover.getCurUserTopSong()[1]
+        else:
+            track.data.body = "Currently Trending"
+
+        return TRENDING_CHANGE_TIME
+        
 
 
     # import assets for the environment
