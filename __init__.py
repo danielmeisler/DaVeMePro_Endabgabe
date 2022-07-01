@@ -283,8 +283,12 @@ class Songcover():
         r = requests.get(url=topArtistsUrl, headers=header)
         if (r.status_code == 200):
             respJson = r.json()
-            topArtists = ["Artists of the Month", respJson["items"][0]["name"], respJson["items"][1]["name"], respJson["items"][2]["name"]]
-            return topArtists
+            if (len(respJson["items"]) < 3):
+                topArtists = ["Artists of the Month", "No Data", "Artists of the Month", "No Data"]
+                return topArtists
+            else:   
+                topArtists = ["Artists of the Month", respJson["items"][0]["name"], respJson["items"][1]["name"], respJson["items"][2]["name"]]
+                return topArtists
         else:
             topArtists = ["Artists of the Month", "No Data", "Artists of the Month", "No Data"]
             return topArtists
