@@ -281,11 +281,14 @@ class Songcover():
             'Authorization': f'Bearer {access_token_user}'.format(token=access_token)
         }
         r = requests.get(url=topArtistsUrl, headers=header)
-        respJson = r.json()
-
-        topArtists = ["Artists of the Month", respJson["items"][0]["name"], respJson["items"][1]["name"], respJson["items"][2]["name"]]
-
-        return topArtists
+        if (r.status_code == 200):
+            respJson = r.json()
+            topArtists = ["Artists of the Month", respJson["items"][0]["name"], respJson["items"][1]["name"], respJson["items"][2]["name"]]
+            return topArtists
+        else:
+            topArtists = ["Artists of the Month", "No Data", "Artists of the Month", "No Data"]
+            return topArtists
+        
 
     # gets current users top track of this week
     def getCurUserTopSong(): 
@@ -294,9 +297,12 @@ class Songcover():
             'Authorization': f'Bearer {access_token_user}'.format(token=access_token)
         }
         r = requests.get(url=topTrackUrl, headers=header)
-        respJson = r.json()
+        if (r.status_code == 200):
+            respJson = r.json()
+            return ["Currently Trending", respJson["items"][0]["name"]]
+        else:
+            return ["Currently Trending", "No Data"]
 
-        return ["Currently Trending", respJson["items"][0]["name"]]
 
     # get current users display name
     def getCurUserDisplayName():
