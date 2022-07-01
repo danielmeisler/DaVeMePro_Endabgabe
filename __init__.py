@@ -56,7 +56,6 @@ PIXEL_LEVEL = 0.01
 WAIT_TIME = 5.0
 PANEL_CHANGE_TIME = 10.0
 CURRENT_ARTIST_POS = 0
-TRENDING_CHANGE_TIME = 10.0
 ANIM_FRAME_RATE = 24
 
 song_id = ""
@@ -88,7 +87,11 @@ class MyProperties(bpy.types.PropertyGroup):
     
     train_speed: bpy.props.FloatProperty(name= "Train Duration", soft_min= 20, soft_max= 50, default= 20)
 
-    refresh_timer: bpy.props.FloatProperty(name= "Timer", soft_min= 1, soft_max= 10, default= 1)
+    refresh_timer: bpy.props.FloatProperty(name= "Refresh Timer", soft_min= 1, soft_max= 10, default= 1)
+
+    pixel_level: bpy.props.FloatProperty(name= "Image Pixel Level", soft_min= 0.01, soft_max= 11, default= 0.01)
+
+    panel_change_timer: bpy.props.FloatProperty(name= "Panel Timer", soft_min= 1, soft_max= 20, default= 10)
     
 # panel for the user input
 class SPOTIFY_PT_panel(bpy.types.Panel):
@@ -104,11 +107,21 @@ class SPOTIFY_PT_panel(bpy.types.Panel):
         scene = context.scene
         mytool = scene.my_tool
 
-        token_url = layout.operator('wm.url_open', text="Get Spotify Token", icon="URL")
-        token_url.url = links["Spotify"]
 
-        layout.prop(mytool, "spotify_user_token")
-        layout.prop(mytool, "train_speed")
+
+        box = self.layout.box()
+        box.label(text="Spotify Token")
+        token_url = box.operator('wm.url_open', text="Get Spotify Token", icon="URL")
+        token_url.url = links["Spotify"]
+        box.prop(mytool, "spotify_user_token")
+
+        box1 = self.layout.box()
+        box1.label(text="Values")
+
+        box1.prop(mytool, "train_speed")
+        box1.prop(mytool, "pixel_level")
+        box1.prop(mytool, "panel_change_timer")
+
         layout.prop(mytool, "refresh_timer")
         self.layout.operator('button.execute', text='Ausführen')
 
@@ -120,6 +133,12 @@ class executeAction(bpy.types.Operator):
     def execute(self, context):
         global access_token_user
         access_token_user = bpy.data.scenes["Scene"].my_tool.spotify_user_token
+
+        global PIXEL_LEVEL
+        PIXEL_LEVEL = bpy.data.scenes["Scene"].my_tool.pixel_level
+
+        global PANEL_CHANGE_TIME
+        PANEL_CHANGE_TIME = bpy.data.scenes["Scene"].my_tool.panel_change_timer
 
         Songcover()
         return {'FINISHED'}
