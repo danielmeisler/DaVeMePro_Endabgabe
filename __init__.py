@@ -54,7 +54,7 @@ PROFILE_POSITION = (0.229749, 1.1, 2.18236)
 
 PIXEL_LEVEL = 0.01
 WAIT_TIME = 5.0
-ARTIST_CHANGE_TIME = 10.0
+PANEL_CHANGE_TIME = 10.0
 CURRENT_ARTIST_POS = 0
 TRENDING_CHANGE_TIME = 10.0
 ANIM_FRAME_RATE = 24
@@ -540,18 +540,17 @@ class Songcover():
         else:
             CURRENT_ARTIST_POS = CURRENT_ARTIST_POS + 1
 
-        return ARTIST_CHANGE_TIME
+        return PANEL_CHANGE_TIME
 
     # refreshes the left panel with the top track that is currently trending
     def update_trending_track():
-        global TRENDING_CHANGE_TIME
         track = bpy.data.objects["Top-Track"]
         if track.data.body == "Currently Trending":
             track.data.body = Songcover.getCurUserTopSong()[1]
         else:
             track.data.body = "Currently Trending"
 
-        return TRENDING_CHANGE_TIME
+        return PANEL_CHANGE_TIME
         
 
 
