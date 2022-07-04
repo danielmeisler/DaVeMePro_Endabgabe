@@ -15,7 +15,7 @@ ___
 1. Blender herunterladen und installieren.
 2. Dieses Repository herunterladen und entpacken.
 3. cv2 installieren (Der Prozess kann unter Umständen nach Blenderversion variieren - cv2 sollte schlussendlich unter <br>"C:\Program Files\Blender Foundation\Blender 3.1\3.1\python\lib\site-packages"<br> installiert sein. Sollte das nicht funktionieren, muss die Installation manuell erfolgen.)
-4. Aus dem entpackten Respositoryordner, blender starten
+4. Blender aus dem entpackten Respositoryordner starten.
 5. In Blender auf Preferences -> Add-ons -> Install klicken und die heruntergeladene \_\_init__.py auswählen.
 6. Wenn nicht schon geschehen, das Addon aktivieren.
 ___
