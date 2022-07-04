@@ -1,8 +1,5 @@
-from cgi import test
 from cmath import pi
 import math
-from nturl2path import url2pathname
-from unicodedata import name
 import requests
 import os
 import cv2
