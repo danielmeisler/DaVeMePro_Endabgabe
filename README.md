@@ -35,3 +35,6 @@ ___
 8. Auf "Ausführen" drücken.
 9. Nun wird die Szene generiert und basierend auf die aktuelle Spotify-Aktivität dynamisch angepasst.
 
+---
+<br>
+<img src="documentation/final.png">
