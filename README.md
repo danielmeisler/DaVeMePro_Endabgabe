@@ -9,7 +9,9 @@ Im Rahmen dieses Projektes haben wir uns mit der Spotify API beschäftigt, und d
 
 Dargestellt wird eine Großstadt mit Hochhäusern, an welchen Leuchtbildtafeln angebracht sind. Auf diesen werden Statistiken sowie das Coverbild des aktuell abgespielten Songs angezeigt. Zusätzlich zeigt die Tageszeit den Fortschritt im Lied, und ein durchfahrender Zug den Namen des momentanen Songs an.
 
-___
+<br>
+<img src="documentation/final.png">
+
 ## How to install
 
 1. Blender herunterladen und installieren.
@@ -34,7 +36,3 @@ ___
 7. Falls noch nicht geschehen, in Spotify ein Lied abspielen lassen.
 8. Auf "Ausführen" drücken.
 9. Nun wird die Szene generiert und basierend auf die aktuelle Spotify-Aktivität dynamisch angepasst.
-
----
-<br>
-<img src="documentation/final.png">
