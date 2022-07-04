@@ -142,6 +142,9 @@ class executeAction(bpy.types.Operator):
         global PANEL_CHANGE_TIME
         PANEL_CHANGE_TIME = bpy.data.scenes["Scene"].my_tool.panel_change_timer
 
+        global WAIT_TIME
+        WAIT_TIME = bpy.data.scenes["Scene"].my_tool.refresh_timer
+
         Songcover()
         return {'FINISHED'}
 
