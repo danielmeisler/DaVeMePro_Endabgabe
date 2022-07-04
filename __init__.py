@@ -21,8 +21,6 @@ bl_info = {
 }
 
 # main
-
-
 def main():
     # selects all objects
     bpy.ops.object.select_all(action='SELECT')
@@ -77,8 +75,6 @@ headers = {
 links = {"Spotify": 'https://developer.spotify.com/console/get-users-currently-playing-track/?market=&additional_types=', }
 
 # propertygroup with needed properties for the panel
-
-
 class MyProperties(bpy.types.PropertyGroup):
     bl_idname = "MyProperties"
 
@@ -101,8 +97,6 @@ class MyProperties(bpy.types.PropertyGroup):
         name="Panel Timer", soft_min=1, soft_max=20, default=10)
 
 # panel for the user input
-
-
 class SPOTIFY_PT_panel(bpy.types.Panel):
     """Creates a Panel in the scene context of the properties editor"""
     bl_label = "Spotify Addon"
@@ -134,8 +128,6 @@ class SPOTIFY_PT_panel(bpy.types.Panel):
         self.layout.operator('button.execute', text='Ausführen')
 
 # operator for the button on the panel
-
-
 class executeAction(bpy.types.Operator):
     bl_idname = "button.execute"
     bl_label = "execute"
@@ -154,8 +146,6 @@ class executeAction(bpy.types.Operator):
         return {'FINISHED'}
 
 # start of the application
-
-
 class Songcover():
     def __init__(self):
         # clear()
@@ -191,7 +181,6 @@ class Songcover():
 
     # gets the access token from the user code from the function above
     # this code automatically gets stored in "access_token_user" and is needed for anything that has to do with user activity
-
     def getAccessToken():
         encoded = base64.b64encode(
             (CLIENT_ID + ":" + CLIENT_SECRET).encode("utf-8")).decode("utf-8")
@@ -241,7 +230,6 @@ class Songcover():
         return((cur_position / max_length) * 100)
 
     # returns an object containing information about the currently played song
-
     def getCurrentlyPlayedSong():
         global access_token_user
         curPlayingUrl = BASE_URL + "me/player/currently-playing"
@@ -344,7 +332,6 @@ class Songcover():
             return ["Currently Trending", "No Data"]
 
     # get current users display name
-
     def getCurUserDisplayName():
         displayUrl = BASE_URL + "me"
         header = {
@@ -374,7 +361,6 @@ class Songcover():
         Songcover.create_board_from_image(img, "cover", COVER_POSITION)
 
     # loop that checks if the song has changed
-
     def updateCurrentSong():
         global song_id
 
@@ -531,7 +517,6 @@ class Songcover():
         return PANEL_CHANGE_TIME
 
     # import assets for the environment
-
     def create_environment():
         file_path = 'DAVT_Project_Scene.blend'
         inner_path = 'Object'
@@ -651,8 +636,6 @@ class Songcover():
             (Songcover.getMsIntoCurSong()/1000)*ANIM_FRAME_RATE)
 
 # autostart
-
-
 class Autostart(bpy.types.Operator):
     bl_idname = "spotify.api"
     bl_label = "Spotify API Visualizer"
@@ -667,8 +650,6 @@ class Autostart(bpy.types.Operator):
         return {'FINISHED'}
 
 # all registered classes and properties
-
-
 def register():
     bpy.utils.register_class(Autostart)
     bpy.utils.register_class(MyProperties)
@@ -677,8 +658,6 @@ def register():
     bpy.types.Scene.my_tool = bpy.props.PointerProperty(type=MyProperties)
 
 # all unregistered classes and properties
-
-
 def unregister():
     bpy.utils.unregister_class(Autostart)
     bpy.utils.unregister_class(MyProperties)
