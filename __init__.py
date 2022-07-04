@@ -69,7 +69,7 @@ headers = {
 }
 
 # dict with needed weblinks
-links = {"Spotify": 'https://developer.spotify.com/console/get-users-currently-playing-track/?market=&additional_types=', }
+links = {"Spotify": 'https://developer.spotify.com/console/get-users-currently-playing-track/?market=&additional_types='}
 
 # propertygroup with needed properties for the panel
 class MyProperties(bpy.types.PropertyGroup):
@@ -77,7 +77,7 @@ class MyProperties(bpy.types.PropertyGroup):
 
     spotify_user_token: bpy.props.StringProperty(
         name="Token",
-        description="You need to generate a Spotify-Acces-Token and put it here to get acces to the data.",
+        description="You need to generate a Spotify-Access-Token and put it here to get access to the data.",
         default="",
     )
 
