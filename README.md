@@ -5,7 +5,7 @@ ___
 ## Kurzbeschreibung
 In diesem Repository findet man die Endabgabe unseres Projekts für das Modul "Datenverarbeitung in der Medienproduktion" an der HFU im Sommersemester 2022.
 
-Im Rahmen dieses Projektes haben wir uns mit der Spotify API beschäftigt, und diese genutzt um ein Addon in Blender zu erstellen, welches das Hörverhalten des Spotifynutzers abbildet.
+Im Rahmen dieses Projektes haben wir uns mit der Spotify API beschäftigt, und diese genutzt um ein Addon in Blender zu erstellen, welches das Spotify-Hörverhalten des Nutzers abbildet.
 
 Dargestellt wird eine Großstadt mit Hochhäusern, an welchen Leuchtbildtafeln angebracht sind. Auf diesen werden Statistiken sowie das Coverbild des aktuell abgespielten Songs angezeigt. Zusätzlich zeigt die Tageszeit den Fortschritt im Lied, und ein durchfahrender Zug den Namen des momentanen Songs an.
 
@@ -17,7 +17,7 @@ Dargestellt wird eine Großstadt mit Hochhäusern, an welchen Leuchtbildtafeln a
 1. Blender herunterladen und installieren.
 2. Dieses Repository herunterladen und entpacken.
 3. cv2 installieren (Der Prozess kann unter Umständen nach Blenderversion variieren - cv2 sollte schlussendlich unter <br>"C:\Program Files\Blender Foundation\Blender 3.1\3.1\python\lib\site-packages"<br> installiert sein. Sollte das nicht funktionieren, muss die Installation manuell erfolgen.)
-4. Blender aus dem entpackten Respositoryordner starten.
+4. Blender aus dem entpackten Repositoryordner starten.
 5. In Blender auf Preferences -> Add-ons -> Install klicken und die heruntergeladene \_\_init__.py auswählen.
 6. Wenn nicht schon geschehen, das Addon aktivieren.
 ___
